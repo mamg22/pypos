@@ -1,0 +1,19 @@
+[project]
+name = "pypos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "mamg22", email = "45301823+mamg22@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pyside6-essentials>=6.8.0.2",
+]
+
+[project.scripts]
+pypos = "pypos:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
