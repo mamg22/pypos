@@ -28,6 +28,74 @@ INSERT INTO Product VALUES
 """)
 
 
+class InventoryTopBar(QtWidgets.QWidget):
+    new_product = QtCore.Signal()
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        layout = QtWidgets.QHBoxLayout()
+        self.setLayout(layout)
+
+        new_button = QtWidgets.QPushButton("Nuevo")
+
+        new_button.clicked.connect(self.emit_new)
+
+        layout.addWidget(new_button)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel("Buscar:"))
+        layout.addWidget(QtWidgets.QLineEdit())
+
+    def emit_new(self) -> None:
+        self.new_product.emit()
+
+
+class ProductInfoDialog(QtWidgets.QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+
+        layout = QtWidgets.QVBoxLayout()
+
+        form_layout = QtWidgets.QFormLayout()
+
+        self.name = QtWidgets.QLineEdit()
+        self.name.setMinimumWidth(300)
+        form_layout.addRow("Nombre:", self.name)
+
+        self.currency = QtWidgets.QComboBox()
+        self.currency.addItems(["Bs", "$"])
+
+        form_layout.addRow("Moneda:", self.currency)
+
+        layout.addLayout(form_layout)
+
+        self.setLayout(layout)
+
+        SB = QtWidgets.QDialogButtonBox.StandardButton
+        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel)
+
+        buttons.accepted.connect(self.accepted)
+        buttons.rejected.connect(self.rejected)
+
+        layout.addWidget(buttons)
+
+        self.accepted.connect(self.on_accept)
+        self.rejected.connect(self.on_reject)
+
+    @QtCore.Slot()
+    def on_accept(self):
+        name = self.name.text()
+        currency = self.currency.currentText()
+
+        print(name, currency)
+
+        self.close()
+
+    @QtCore.Slot()
+    def on_reject(self):
+        self.close()
+
+
 class ProductPreviewWidget(QtWidgets.QFrame):
     def __init__(self) -> None:
         super().__init__()
@@ -69,38 +137,31 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.quantity_label.setText(f"Cantidad: {quantity}")
 
 
-class InventoryWidget(QtWidgets.QWidget):
+class ProductTable(QtWidgets.QTableWidget):
     selected = QtCore.Signal(tuple)
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent=None) -> None:
+        super().__init__(0, 4, parent)
 
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
-
-        inventory_table = QtWidgets.QTableWidget(0, 4, self)
-        self.inventory_table = inventory_table
-        inventory_table.setColumnCount(4)
-        inventory_table.setHorizontalHeaderLabels(["Item", "Cantidad", "$", "Bs"])
-        inventory_table.setSelectionBehavior(
+        self.setColumnCount(4)
+        self.setHorizontalHeaderLabels(["Item", "Cantidad", "$", "Bs"])
+        self.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
-        inventory_table.setSelectionMode(
-            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection
-        )
-        inventory_table.horizontalHeader().setSectionResizeMode(
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        self.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
-        inventory_table.horizontalHeader().setSectionResizeMode(
+        self.horizontalHeader().setSectionResizeMode(
             0, QtWidgets.QHeaderView.ResizeMode.Stretch
         )
-        inventory_table.verticalHeader().setSectionResizeMode(
+        self.verticalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
 
         n_rows = conn.execute("SELECT COUNT() FROM Product").fetchone()[0]
 
-        inventory_table.setRowCount(n_rows)
+        self.setRowCount(n_rows)
 
         cur = conn.execute(
             "SELECT rowid, name, abs(random() % 50), price*rowid, price*rowid*42.60 FROM Product"
@@ -119,17 +180,37 @@ class InventoryWidget(QtWidgets.QWidget):
                 item.setFlags(row_flags)
                 item.setData(Qt.ItemDataRole.UserRole, row)
 
-                inventory_table.setItem(row_num, idx, item)
+                self.setItem(row_num, idx, item)
 
-        self.inventory_table.itemSelectionChanged.connect(self.activated)
+        self.itemSelectionChanged.connect(self.row_selected)
 
-        self.layout().addWidget(inventory_table)
+    @QtCore.Slot()
+    def row_selected(self):
+        d = self.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
+        self.selected.emit(d)
+
+
+class InventoryWidget(QtWidgets.QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        topbar = InventoryTopBar()
+        topbar.new_product.connect(self.new)
+
+        product_table = ProductTable(self)
+        self.product_table = product_table
+
+        self.layout().addWidget(topbar)
+        self.layout().addWidget(product_table)
         self.preview = ProductPreviewWidget()
         self.layout().addWidget(self.preview)
 
-        self.selected.connect(self.preview.show_product)
+        self.product_table.selected.connect(self.preview.show_product)
 
     @QtCore.Slot()
-    def activated(self):
-        d = self.inventory_table.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
-        self.selected.emit(d)
+    def new(self):
+        w = ProductInfoDialog()
+        w.exec()
