@@ -30,6 +30,7 @@ INSERT INTO Product VALUES
 
 class InventoryTopBar(QtWidgets.QWidget):
     new_product = QtCore.Signal()
+    search_submitted = QtCore.Signal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -38,16 +39,27 @@ class InventoryTopBar(QtWidgets.QWidget):
         self.setLayout(layout)
 
         new_button = QtWidgets.QPushButton("Nuevo")
+        self.new_button = new_button
 
         new_button.clicked.connect(self.emit_new)
+
+        search_bar = QtWidgets.QLineEdit()
+        self.search_bar = search_bar
+        search_bar.editingFinished.connect(self.search_edit_finished)
 
         layout.addWidget(new_button)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel("Buscar:"))
-        layout.addWidget(QtWidgets.QLineEdit())
+        layout.addWidget(search_bar)
 
+    @QtCore.Slot()
     def emit_new(self) -> None:
         self.new_product.emit()
+
+    @QtCore.Slot()
+    def search_edit_finished(self):
+        text = self.search_bar.text()
+        self.search_submitted.emit(text)
 
 
 class ProductInfoDialog(QtWidgets.QDialog):
@@ -159,12 +171,24 @@ class ProductTable(QtWidgets.QTableWidget):
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
 
-        n_rows = conn.execute("SELECT COUNT() FROM Product").fetchone()[0]
+        self.itemSelectionChanged.connect(self.row_selected)
+
+        self.refresh_table()
+
+    @QtCore.Slot(str)
+    @QtCore.Slot(type(None))
+    def refresh_table(self, query: str | None = None):
+        q = "WHERE name LIKE '%' || ? || '%'" if query is not None else ""
+        p = (query,) if query is not None else tuple()
+
+        n_rows = conn.execute("SELECT COUNT() FROM Product " + q, p).fetchone()[0]
 
         self.setRowCount(n_rows)
 
         cur = conn.execute(
-            "SELECT rowid, name, abs(random() % 50), price*rowid, price*rowid*42.60 FROM Product"
+            "SELECT rowid, name, abs(random() % 50), price*rowid, price*rowid*42.60 "
+            "FROM Product " + q,
+            p,
         )
 
         ItemFlag = Qt.ItemFlag
@@ -182,8 +206,6 @@ class ProductTable(QtWidgets.QTableWidget):
 
                 self.setItem(row_num, idx, item)
 
-        self.itemSelectionChanged.connect(self.row_selected)
-
     @QtCore.Slot()
     def row_selected(self):
         d = self.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
@@ -199,9 +221,12 @@ class InventoryWidget(QtWidgets.QWidget):
 
         topbar = InventoryTopBar()
         topbar.new_product.connect(self.new)
+        topbar.search_submitted.connect(self.log_search)
 
         product_table = ProductTable(self)
         self.product_table = product_table
+
+        topbar.search_submitted.connect(self.product_table.refresh_table)
 
         self.layout().addWidget(topbar)
         self.layout().addWidget(product_table)
@@ -209,6 +234,10 @@ class InventoryWidget(QtWidgets.QWidget):
         self.layout().addWidget(self.preview)
 
         self.product_table.selected.connect(self.preview.show_product)
+
+    @QtCore.Slot(str)
+    def log_search(self, query: str):
+        print(query)
 
     @QtCore.Slot()
     def new(self):
