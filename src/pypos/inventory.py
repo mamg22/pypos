@@ -115,8 +115,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
+    current_id: int | None
+
     def __init__(self) -> None:
         super().__init__()
+
+        self.current_id = None
 
         self.setLineWidth(1)
         self.setFrameShape(type(self).Shape.StyledPanel)
@@ -146,17 +150,29 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         )
         self.grid.addWidget(self.quantity_label, 1, 0)
 
-    @QtCore.Slot(tuple)
-    def show_product(self, product: tuple):
-        _, name, quantity, price, _ = product
+        self.show_product(None)
 
-        self.name_label.setText(f"{name}")
-        self.price_label.setText(str(price))
-        self.quantity_label.setText(f"Cantidad: {quantity}")
+    @QtCore.Slot(int)
+    @QtCore.Slot(type(None))
+    def show_product(self, id: int | None):
+        self.current_id = id
+        self.show()
+        cur = conn.execute("SELECT name, 10, price FROM Product WHERE rowid = ?", (id,))
+
+        result = cur.fetchone()
+
+        if result is not None:
+            name, quantity, price = result
+
+            self.name_label.setText(f"{name}")
+            self.price_label.setText(str(price))
+            self.quantity_label.setText(f"Cantidad: {quantity}")
+        else:
+            self.hide()
 
 
 class ProductTable(QtWidgets.QTableWidget):
-    selected = QtCore.Signal(tuple)
+    selected = QtCore.Signal(int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(0, 4, parent)
@@ -202,20 +218,24 @@ class ProductTable(QtWidgets.QTableWidget):
         number_align = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight
 
         for row_num, row in enumerate(cur.fetchall()):
+            row_id = row[0]
             for idx, value in enumerate(row[1:]):
                 item = QtWidgets.QTableWidgetItem(str(value))
 
                 if isinstance(value, int | float | Decimal):
                     item.setTextAlignment(number_align)
                 item.setFlags(row_flags)
-                item.setData(Qt.ItemDataRole.UserRole, row)
+                item.setData(Qt.ItemDataRole.UserRole, row_id)
 
                 self.setItem(row_num, idx, item)
 
     @QtCore.Slot()
     def row_selected(self):
-        d = self.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
-        self.selected.emit(d)
+        try:
+            item_id = self.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
+            self.selected.emit(item_id)
+        except IndexError:
+            self.selected.emit(None)
 
 
 class InventoryWidget(QtWidgets.QWidget):
