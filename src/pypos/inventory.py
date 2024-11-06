@@ -84,10 +84,11 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel)
+        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
 
         buttons.accepted.connect(self.accepted)
         buttons.rejected.connect(self.rejected)
+        buttons.button(SB.Reset).clicked.connect(self.on_reset)
 
         layout.addWidget(buttons)
 
@@ -106,6 +107,11 @@ class ProductInfoDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def on_reject(self):
         self.close()
+
+    @QtCore.Slot()
+    def on_reset(self):
+        self.name.clear()
+        self.currency.setCurrentIndex(0)
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
