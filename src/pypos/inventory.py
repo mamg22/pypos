@@ -1,31 +1,8 @@
 from decimal import Decimal
-import sqlite3
+from itertools import count
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
-
-conn = sqlite3.connect(":memory:")
-
-conn.executescript("""\
-CREATE TABLE IF NOT EXISTS Product (
-    name TEXT NOT NULL,
-    value INTEGER NOT NULL,
-    currency TEXT NOT NULL,
-    margin INTEGER NOT NULL,
-    price INTEGER NOT NULL,
-    last_update INTEGER NOT NULL
-);
-INSERT INTO Product VALUES
-    ('Harina', 200, 'USD', '1000', 220, unixepoch()),
-    ('Cafe', 200, 'USD', '1000', 220, unixepoch()),
-    ('Azucar', 200, 'USD', '1000', 220, unixepoch()),
-    ('Arroz', 200, 'USD', '1000', 220, unixepoch()),
-    ('Spaghetti', 200, 'USD', '1000', 220, unixepoch()),
-    ('Sal', 200, 'USD', '1000', 220, unixepoch()),
-    ('Harina de trigo', 200, 'USD', '1000', 220, unixepoch()),
-    ('Cerelac', 200, 'USD', '1000', 220, unixepoch()),
-    ('Jabon', 200, 'USD', '1000', 220, unixepoch());
-""")
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -100,8 +77,6 @@ class ProductInfoDialog(QtWidgets.QDialog):
         name = self.name.text()
         currency = self.currency.currentText()
 
-        print(name, currency)
-
         self.close()
 
     @QtCore.Slot()
@@ -157,16 +132,32 @@ class ProductPreviewWidget(QtWidgets.QFrame):
     def show_product(self, id: int | None):
         self.current_id = id
         self.show()
-        cur = conn.execute("SELECT name, 10, price FROM Product WHERE rowid = ?", (id,))
 
-        result = cur.fetchone()
+        product_query = QtSql.QSqlQuery()
+        prepared = product_query.prepare("""\
+            SELECT name, quantity, price
+            FROM Products p
+                INNER JOIN Inventory i
+                ON p.rowid = i.product
+            WHERE p.rowid = :id""")
 
-        if result is not None:
-            name, quantity, price = result
+        if not prepared:
+            print(product_query.lastError())
+
+        product_query.bindValue(":id", id)
+
+        if not product_query.exec():
+            print(product_query.lastError())
+
+        if product_query.next():
+            name = product_query.value(0)
+            quantity = product_query.value(1)
+            price = product_query.value(2)
 
             self.name_label.setText(f"{name}")
             self.price_label.setText(str(price))
             self.quantity_label.setText(f"Cantidad: {quantity}")
+            self.show()
         else:
             self.hide()
 
@@ -200,24 +191,41 @@ class ProductTable(QtWidgets.QTableWidget):
     @QtCore.Slot(str)
     @QtCore.Slot(type(None))
     def refresh_table(self, query: str | None = None):
-        q = "WHERE name LIKE '%' || ? || '%'" if query is not None else ""
-        p = (query,) if query is not None else tuple()
+        where_clause = " WHERE name LIKE '%' || ? || '%'" if query is not None else ""
+        params = (query,) if query is not None else tuple()
 
-        n_rows = conn.execute("SELECT COUNT() FROM Product " + q, p).fetchone()[0]
+        db = QtSql.QSqlDatabase.database()
+        product_query = QtSql.QSqlQuery()
+
+        product_query.prepare(
+            "SELECT p.rowid, name, quantity, price, price*42.60 "
+            "FROM Products p INNER JOIN Inventory i ON p.rowid = i.product"
+            + where_clause
+        )
+        for param in params:
+            product_query.addBindValue(param)
+
+        if not product_query.exec():
+            print(product_query.lastError())
+
+        if db.driver().hasFeature(QtSql.QSqlDriver.DriverFeature.QuerySize):
+            n_rows = product_query.size()
+        else:
+            product_query.last()
+            n_rows = max(product_query.at() + 1, 0)
+            product_query.seek(QtSql.QSql.Location.BeforeFirstRow.value)
 
         self.setRowCount(n_rows)
-
-        cur = conn.execute(
-            "SELECT rowid, name, abs(random() % 50), price*rowid, price*rowid*42.60 "
-            "FROM Product " + q,
-            p,
-        )
 
         ItemFlag = Qt.ItemFlag
         row_flags = ItemFlag.ItemIsSelectable | ItemFlag.ItemIsEnabled
         number_align = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight
 
-        for row_num, row in enumerate(cur.fetchall()):
+        for row_num in range(n_rows):
+            product_query.next()
+            row = tuple(
+                product_query.value(i) for i in range(product_query.record().count())
+            )
             row_id = row[0]
             for idx, value in enumerate(row[1:]):
                 item = QtWidgets.QTableWidgetItem(str(value))
