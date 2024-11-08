@@ -58,18 +58,18 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.name.setMinimumWidth(300)
         form_layout.addRow("Nombre:", self.name)
 
-        buy_price_layout = QtWidgets.QHBoxLayout()
+        purchase_price_layout = QtWidgets.QHBoxLayout()
 
-        self.buy_currency = QtWidgets.QComboBox()
-        self.buy_currency.addItems(["Bs", "$"])
+        self.purchase_currency = QtWidgets.QComboBox()
+        self.purchase_currency.addItems(["Bs", "$"])
 
-        self.buy_value = QtWidgets.QDoubleSpinBox()
-        self.buy_value.setMaximum(self.MAX_VALUE)
+        self.purchase_value = QtWidgets.QDoubleSpinBox()
+        self.purchase_value.setMaximum(self.MAX_VALUE)
 
-        buy_price_layout.addWidget(self.buy_currency)
-        buy_price_layout.addWidget(self.buy_value, 1)
+        purchase_price_layout.addWidget(self.purchase_currency)
+        purchase_price_layout.addWidget(self.purchase_value, 1)
 
-        form_layout.addRow("Precio compra:", buy_price_layout)
+        form_layout.addRow("Precio compra:", purchase_price_layout)
 
         sell_price_layout = QtWidgets.QHBoxLayout()
 
@@ -105,8 +105,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def accept(self):
         name = self.name.text()
-        buy_currency = self.buy_currency.currentText()
-        buy_value = self.buy_value.value()
+        purchase_currency = self.purchase_currency.currentText()
+        purchase_value = self.purchase_value.value()
         margin = self.margin.value()
         sell_currency = self.sell_currency.currentText()
         sell_value = self.sell_value.value()
@@ -117,8 +117,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def on_reset(self):
         self.name.clear()
-        self.buy_currency.setCurrentIndex(0)
-        self.buy_value.setValue(0)
+        self.purchase_currency.setCurrentIndex(0)
+        self.purchase_value.setValue(0)
         self.margin.setValue(0)
         self.sell_currency.setCurrentIndex(0)
         self.sell_value.setValue(0)
