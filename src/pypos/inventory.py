@@ -62,25 +62,19 @@ class ProductInfoDialog(QtWidgets.QDialog):
         SB = QtWidgets.QDialogButtonBox.StandardButton
         buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
 
-        buttons.accepted.connect(self.accepted)
-        buttons.rejected.connect(self.rejected)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
         buttons.button(SB.Reset).clicked.connect(self.on_reset)
 
         layout.addWidget(buttons)
 
-        self.accepted.connect(self.on_accept)
-        self.rejected.connect(self.on_reject)
-
     @QtCore.Slot()
-    def on_accept(self):
+    def accept(self):
         name = self.name.text()
         currency = self.currency.currentText()
+        print(name, currency)
 
-        self.close()
-
-    @QtCore.Slot()
-    def on_reject(self):
-        self.close()
+        super().accept()
 
     @QtCore.Slot()
     def on_reset(self):
