@@ -188,22 +188,34 @@ class ProductTable(QtWidgets.QTableWidget):
 
         self.refresh_table()
 
+    TABLE_QUERY = """
+    SELECT p.rowid, name, quantity, price, price*42.60
+    FROM Products p
+        INNER JOIN Inventory i
+        ON p.rowid = i.product
+    {where_clause}
+    ORDER BY
+        CASE
+            WHEN like(:name || '%', name) THEN 1
+            WHEN like(concat('% ', :name, '%'), name) THEN 2
+            ELSE 3
+        END, name
+    """
+
     @QtCore.Slot(str)
     @QtCore.Slot(type(None))
     def refresh_table(self, query: str | None = None):
-        where_clause = " WHERE name LIKE '%' || ? || '%'" if query is not None else ""
+        where_clause = (
+            " WHERE name LIKE concat('%', :name, '%')" if query is not None else ""
+        )
         params = (query,) if query is not None else tuple()
 
         db = QtSql.QSqlDatabase.database()
         product_query = QtSql.QSqlQuery()
 
-        product_query.prepare(
-            "SELECT p.rowid, name, quantity, price, price*42.60 "
-            "FROM Products p INNER JOIN Inventory i ON p.rowid = i.product"
-            + where_clause
-        )
+        product_query.prepare(self.TABLE_QUERY.format(where_clause=where_clause))
         for param in params:
-            product_query.addBindValue(param)
+            product_query.bindValue(":name", param)
 
         if not product_query.exec():
             print(product_query.lastError())
