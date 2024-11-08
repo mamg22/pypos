@@ -13,6 +13,11 @@ class InventoryTopBar(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
         self.setLayout(layout)
+        layout_margins = layout.contentsMargins()
+        layout_margins.setLeft(0)
+        layout_margins.setRight(0)
+        layout_margins.setTop(0)
+        layout.setContentsMargins(layout_margins)
 
         new_button = QtWidgets.QPushButton("Nuevo")
         self.new_button = new_button
