@@ -1,5 +1,4 @@
 from decimal import Decimal
-from itertools import count
 
 from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
