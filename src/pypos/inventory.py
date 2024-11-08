@@ -1,4 +1,5 @@
 from decimal import Decimal
+from sys import float_info
 
 from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
@@ -44,6 +45,8 @@ class InventoryTopBar(QtWidgets.QWidget):
 
 
 class ProductInfoDialog(QtWidgets.QDialog):
+    MAX_VALUE = 10 ** (float_info.dig - 3)
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -55,10 +58,36 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.name.setMinimumWidth(300)
         form_layout.addRow("Nombre:", self.name)
 
-        self.currency = QtWidgets.QComboBox()
-        self.currency.addItems(["Bs", "$"])
+        buy_price_layout = QtWidgets.QHBoxLayout()
 
-        form_layout.addRow("Moneda:", self.currency)
+        self.buy_currency = QtWidgets.QComboBox()
+        self.buy_currency.addItems(["Bs", "$"])
+
+        self.buy_value = QtWidgets.QDoubleSpinBox()
+        self.buy_value.setMaximum(self.MAX_VALUE)
+
+        buy_price_layout.addWidget(self.buy_currency)
+        buy_price_layout.addWidget(self.buy_value, 1)
+
+        form_layout.addRow("Precio compra:", buy_price_layout)
+
+        sell_price_layout = QtWidgets.QHBoxLayout()
+
+        self.margin = QtWidgets.QDoubleSpinBox()
+        self.margin.setSuffix("%")
+        self.margin.setMaximum(self.MAX_VALUE)
+        form_layout.addRow("Margen:", self.margin)
+
+        self.sell_currency = QtWidgets.QComboBox()
+        self.sell_currency.addItems(["Bs", "$"])
+
+        self.sell_value = QtWidgets.QDoubleSpinBox()
+        self.sell_value.setMaximum(self.MAX_VALUE)
+
+        sell_price_layout.addWidget(self.sell_currency)
+        sell_price_layout.addWidget(self.sell_value, 1)
+
+        form_layout.addRow("Precio venta:", sell_price_layout)
 
         layout.addLayout(form_layout)
 
@@ -76,15 +105,23 @@ class ProductInfoDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def accept(self):
         name = self.name.text()
-        currency = self.currency.currentText()
-        print(name, currency)
+        buy_currency = self.buy_currency.currentText()
+        buy_value = self.buy_value.value()
+        margin = self.margin.value()
+        sell_currency = self.sell_currency.currentText()
+        sell_value = self.sell_value.value()
+        print(*locals().items())
 
         super().accept()
 
     @QtCore.Slot()
     def on_reset(self):
         self.name.clear()
-        self.currency.setCurrentIndex(0)
+        self.buy_currency.setCurrentIndex(0)
+        self.buy_value.setValue(0)
+        self.margin.setValue(0)
+        self.sell_currency.setCurrentIndex(0)
+        self.sell_value.setValue(0)
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
