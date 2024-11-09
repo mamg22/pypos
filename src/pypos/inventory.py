@@ -1,8 +1,26 @@
 from decimal import Decimal
 from sys import float_info
 
-from PySide6 import QtCore, QtWidgets, QtSql
+from PySide6 import QtCore, QtWidgets, QtSql, QtGui
 from PySide6.QtCore import Qt
+
+
+LOCALE_DECIMAL_SEP = QtCore.QLocale().decimalPoint()
+LOCALE_GROUP_SEP = QtCore.QLocale().groupSeparator()
+
+
+class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
+    def validate(self, input: str, pos: int) -> object:
+        if LOCALE_GROUP_SEP in input:
+            return QtGui.QValidator.State.Invalid
+        return super().validate(input, pos)
+
+    def decimal_value(self) -> Decimal:
+        value_text = self._fixup_decimal(self.cleanText())
+        return Decimal(value_text)
+
+    def _fixup_decimal(self, value: str) -> str:
+        return value.replace(LOCALE_DECIMAL_SEP, ".", 1)
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -72,7 +90,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.purchase_currency = QtWidgets.QComboBox()
         self.purchase_currency.addItems(["Bs", "$"])
 
-        self.purchase_value = QtWidgets.QDoubleSpinBox()
+        self.purchase_value = DecimalSpinBox()
         self.purchase_value.setMaximum(self.MAX_VALUE)
 
         purchase_price_layout.addWidget(self.purchase_currency)
@@ -82,7 +100,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         sell_price_layout = QtWidgets.QHBoxLayout()
 
-        self.margin = QtWidgets.QDoubleSpinBox()
+        self.margin = DecimalSpinBox()
         self.margin.setSuffix("%")
         self.margin.setMaximum(self.MAX_VALUE)
         form_layout.addRow("Margen:", self.margin)
@@ -90,7 +108,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.sell_currency = QtWidgets.QComboBox()
         self.sell_currency.addItems(["Bs", "$"])
 
-        self.sell_value = QtWidgets.QDoubleSpinBox()
+        self.sell_value = DecimalSpinBox()
         self.sell_value.setMaximum(self.MAX_VALUE)
 
         sell_price_layout.addWidget(self.sell_currency)
@@ -115,20 +133,20 @@ class ProductInfoDialog(QtWidgets.QDialog):
     def accept(self):
         name = self.name.text()
         purchase_currency = self.purchase_currency.currentText()
-        purchase_value = self.purchase_value.value()
-        margin = self.margin.value()
+        purchase_value = self.purchase_value.decimal_value()
+        margin = self.margin.decimal_value()
         sell_currency = self.sell_currency.currentText()
-        sell_value = self.sell_value.value()
+        sell_value = self.sell_value.decimal_value()
 
         query = QtSql.QSqlQuery()
         query.prepare(self.INSERT_QUERY)
 
         query.bindValue(":name", name)
         query.bindValue(":purchase_currency", purchase_currency)
-        query.bindValue(":purchase_value", purchase_value)
-        query.bindValue(":margin", margin)
+        query.bindValue(":purchase_value", int(purchase_value * 100))
+        query.bindValue(":margin", int(margin * 100))
         query.bindValue(":sell_currency", sell_currency)
-        query.bindValue(":sell_value", sell_value)
+        query.bindValue(":sell_value", int(sell_value * 100))
 
         if not query.exec():
             print(query.lastError())
@@ -219,11 +237,11 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         if product_query.next():
             name = product_query.value(0)
             quantity = product_query.value(1)
-            price = product_query.value(2)
+            price = Decimal(product_query.value(2)) / 100
 
             self.name_label.setText(f"{name}")
-            self.price_label.setText(str(price))
-            self.quantity_label.setText(f"Cantidad: {quantity}")
+            self.price_label.setText(f"{price:.2f}")
+            self.quantity_label.setText(f"Existencias: {quantity}")
             self.show()
         else:
             self.hide()
@@ -236,7 +254,7 @@ class ProductTable(QtWidgets.QTableWidget):
         super().__init__(0, 4, parent)
 
         self.setColumnCount(4)
-        self.setHorizontalHeaderLabels(["Item", "Cantidad", "$", "Bs"])
+        self.setHorizontalHeaderLabels(["Item", "Existencias", "$", "Bs"])
         self.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
@@ -257,7 +275,7 @@ class ProductTable(QtWidgets.QTableWidget):
         self.refresh_table()
 
     TABLE_QUERY = """
-    SELECT p.rowid, name, quantity, sell_value, sell_value*42.60
+    SELECT p.rowid, name, quantity, sell_value
     FROM Products p
         INNER JOIN Inventory i
         ON p.rowid = i.product
@@ -303,15 +321,16 @@ class ProductTable(QtWidgets.QTableWidget):
 
         for row_num in range(n_rows):
             product_query.next()
-            row = tuple(
+            row_id, name, quantity, sell_value = (
                 product_query.value(i) for i in range(product_query.record().count())
             )
-            row_id = row[0]
-            for idx, value in enumerate(row[1:]):
+            sell_value = Decimal(sell_value) / 100
+            for idx, value in enumerate((name, quantity, sell_value, sell_value)):
                 item = QtWidgets.QTableWidgetItem(str(value))
 
                 if isinstance(value, int | float | Decimal):
                     item.setTextAlignment(number_align)
+                    item.setText(f"{value:.2f}")
                 item.setFlags(row_flags)
                 item.setData(Qt.ItemDataRole.UserRole, row_id)
 
