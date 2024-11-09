@@ -46,6 +46,15 @@ class InventoryTopBar(QtWidgets.QWidget):
 
 class ProductInfoDialog(QtWidgets.QDialog):
     MAX_VALUE = 10 ** (float_info.dig - 3)
+    CURRENCY_MAPPING = {
+        "Bs": "BSD",
+        "$": "USD",
+    }
+    INSERT_QUERY = """\
+    INSERT INTO Products VALUES
+        (:name, :purchase_currency, :purchase_value, :margin,
+         :sell_currency, :sell_value, unixepoch())
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -110,7 +119,30 @@ class ProductInfoDialog(QtWidgets.QDialog):
         margin = self.margin.value()
         sell_currency = self.sell_currency.currentText()
         sell_value = self.sell_value.value()
-        print(*locals().items())
+
+        query = QtSql.QSqlQuery()
+        query.prepare(self.INSERT_QUERY)
+
+        query.bindValue(":name", name)
+        query.bindValue(":purchase_currency", purchase_currency)
+        query.bindValue(":purchase_value", purchase_value)
+        query.bindValue(":margin", margin)
+        query.bindValue(":sell_currency", sell_currency)
+        query.bindValue(":sell_value", sell_value)
+
+        if not query.exec():
+            print(query.lastError())
+
+        item_id = query.lastInsertId()
+
+        query = QtSql.QSqlQuery()
+        query.prepare("INSERT INTO Inventory VALUES (:id, :quantity)")
+
+        query.bindValue(":id", item_id)
+        query.bindValue(":quantity", 0)
+
+        if not query.exec():
+            print(query.lastError())
 
         super().accept()
 
