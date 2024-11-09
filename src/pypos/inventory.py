@@ -250,6 +250,7 @@ class ProductTable(QtWidgets.QTableWidget):
         self.verticalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
+        self.verticalHeader().hide()
 
         self.itemSelectionChanged.connect(self.row_selected)
 
