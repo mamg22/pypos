@@ -43,8 +43,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 SCHEMA: str = """\
-DROP TABLE IF EXISTS Products;
-DROP TABLE IF EXISTS Inventory;
 CREATE TABLE IF NOT EXISTS Products (
     name TEXT NOT NULL,
     purchase_currency TEXT NOT NULL,
