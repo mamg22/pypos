@@ -170,7 +170,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
 
         product_query = QtSql.QSqlQuery()
         prepared = product_query.prepare("""\
-            SELECT name, quantity, price
+            SELECT name, quantity, sell_value
             FROM Products p
                 INNER JOIN Inventory i
                 ON p.rowid = i.product
@@ -224,7 +224,7 @@ class ProductTable(QtWidgets.QTableWidget):
         self.refresh_table()
 
     TABLE_QUERY = """
-    SELECT p.rowid, name, quantity, price, price*42.60
+    SELECT p.rowid, name, quantity, sell_value, sell_value*42.60
     FROM Products p
         INNER JOIN Inventory i
         ON p.rowid = i.product

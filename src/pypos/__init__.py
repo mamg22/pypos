@@ -46,10 +46,10 @@ SCHEMA: str = """\
 CREATE TABLE IF NOT EXISTS Products (
     name TEXT NOT NULL,
     purchase_currency TEXT NOT NULL,
-    purchase_value INTEGER NOT NULL
+    purchase_value INTEGER NOT NULL,
     margin INTEGER NOT NULL,
     sell_currency INTEGER NOT NULL,
-    sell_value INTEGER NOT NULL
+    sell_value INTEGER NOT NULL,
     last_update INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS Inventory (
