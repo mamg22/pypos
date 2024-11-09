@@ -116,6 +116,17 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow("Precio venta:", sell_price_layout)
 
+        separator = QtWidgets.QFrame()
+        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+
+        form_layout.addRow(separator)
+
+        self.quantity = QtWidgets.QSpinBox()
+        self.quantity.setMaximum(1_000_000_000)
+
+        form_layout.addRow("Existencias:", self.quantity)
+
         layout.addLayout(form_layout)
 
         self.setLayout(layout)
@@ -137,6 +148,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         margin = self.margin.decimal_value()
         sell_currency = self.sell_currency.currentText()
         sell_value = self.sell_value.decimal_value()
+        quantity = self.quantity.value()
 
         query = QtSql.QSqlQuery()
         query.prepare(self.INSERT_QUERY)
@@ -157,7 +169,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         query.prepare("INSERT INTO Inventory VALUES (:id, :quantity)")
 
         query.bindValue(":id", item_id)
-        query.bindValue(":quantity", 0)
+        query.bindValue(":quantity", quantity)
 
         if not query.exec():
             print(query.lastError())
