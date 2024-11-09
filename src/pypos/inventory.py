@@ -259,6 +259,37 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             self.hide()
 
 
+class InventoryProductActions(QtWidgets.QWidget):
+    product_id: int | None
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        layout = QtWidgets.QVBoxLayout()
+
+        self.to_cart_button = QtWidgets.QPushButton("Agregar al Carrito")
+        self.quantity_button = QtWidgets.QPushButton("Existencias")
+        self.edit_button = QtWidgets.QPushButton("Editar")
+        self.delete_button = QtWidgets.QPushButton("Eliminar")
+
+        layout.addWidget(self.to_cart_button)
+        layout.addWidget(self.quantity_button)
+        layout.addWidget(self.edit_button)
+        layout.addWidget(self.delete_button)
+
+        self.setLayout(layout)
+
+        self.set_product(None)
+
+    @QtCore.Slot()
+    def set_product(self, product_id: int | None) -> None:
+        self.product_id = product_id
+        if product_id is not None:
+            self.show()
+        else:
+            self.hide()
+
+
 class ProductTable(QtWidgets.QTableWidget):
     selected = QtCore.Signal(int)
 
@@ -374,12 +405,21 @@ class InventoryWidget(QtWidgets.QWidget):
 
         topbar.search_submitted.connect(self.product_table.refresh_table)
 
-        self.layout().addWidget(topbar)
-        self.layout().addWidget(product_table)
+        layout.addWidget(topbar)
+        layout.addWidget(product_table)
+
+        bottom = QtWidgets.QHBoxLayout()
+        self.bottom = bottom
         self.preview = ProductPreviewWidget()
-        self.layout().addWidget(self.preview)
+        self.product_actions = InventoryProductActions()
+
+        bottom.addWidget(self.preview, 1)
+        bottom.addWidget(self.product_actions)
+
+        layout.addLayout(bottom)
 
         self.product_table.selected.connect(self.preview.show_product)
+        self.product_table.selected.connect(self.product_actions.set_product)
 
     @QtCore.Slot(str)
     def log_search(self, query: str):
