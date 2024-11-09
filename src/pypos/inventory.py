@@ -333,6 +333,7 @@ class InventoryWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         topbar = InventoryTopBar()
+        self.topbar = topbar
         topbar.new_product.connect(self.new)
         topbar.search_submitted.connect(self.log_search)
 
@@ -355,4 +356,7 @@ class InventoryWidget(QtWidgets.QWidget):
     @QtCore.Slot()
     def new(self):
         w = ProductInfoDialog()
-        w.exec()
+        result = w.exec()
+        if result == ProductInfoDialog.DialogCode.Accepted:
+            # FIXME: This should't reach into topbar like this probably.
+            self.topbar.search_edit_finished()
