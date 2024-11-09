@@ -47,36 +47,17 @@ DROP TABLE IF EXISTS Products;
 DROP TABLE IF EXISTS Inventory;
 CREATE TABLE IF NOT EXISTS Products (
     name TEXT NOT NULL,
-    value INTEGER NOT NULL,
-    currency TEXT NOT NULL,
+    purchase_currency TEXT NOT NULL,
+    purchase_value INTEGER NOT NULL
     margin INTEGER NOT NULL,
-    price INTEGER NOT NULL,
+    sell_currency INTEGER NOT NULL,
+    sell_value INTEGER NOT NULL
     last_update INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS Inventory (
     product INTEGER NOT NULL,
     quantity INTEGER NOT NULL
 );
-INSERT INTO Products VALUES
-    ('Harina', 200, 'USD', '1000', 220, unixepoch()),
-    ('Cafe', 200, 'USD', '1000', 220, unixepoch()),
-    ('Azucar', 200, 'USD', '1000', 220, unixepoch()),
-    ('Arroz', 200, 'USD', '1000', 220, unixepoch()),
-    ('Spaghetti', 200, 'USD', '1000', 220, unixepoch()),
-    ('Sal', 200, 'USD', '1000', 220, unixepoch()),
-    ('Harina de trigo', 200, 'USD', '1000', 220, unixepoch()),
-    ('Cerelac', 200, 'USD', '1000', 220, unixepoch()),
-    ('Jabon', 200, 'USD', '1000', 220, unixepoch());
-INSERT INTO Inventory VALUES
-    (1, 5),
-    (2, 10),
-    (3, 15),
-    (4, 20),
-    (5, 25),
-    (6, 30),
-    (7, 35),
-    (8, 40),
-    (9, 50);
 """
 
 
