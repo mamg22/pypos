@@ -334,8 +334,8 @@ class ProductTable(QtWidgets.QTableWidget):
 
     @QtCore.Slot(str)
     def set_query(self, query: str | None) -> None:
-        if query is not None and query.strip():
-            self.query = query
+        if query is not None:
+            self.query = query.strip() or None
         else:
             self.query = None
         self.refresh_table()
