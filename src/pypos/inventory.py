@@ -291,7 +291,22 @@ class InventoryProductActions(QtWidgets.QWidget):
 
 
 class ProductTable(QtWidgets.QTableWidget):
+    query: str | None
     selected = QtCore.Signal(int)
+
+    TABLE_QUERY = """
+    SELECT p.rowid, name, quantity, sell_value
+    FROM Products p
+        INNER JOIN Inventory i
+        ON p.rowid = i.product
+    {where_clause}
+    ORDER BY
+        CASE
+            WHEN like(:name || '%', name) THEN 1
+            WHEN like(concat('% ', :name, '%'), name) THEN 2
+            ELSE 3
+        END, name
+    """
 
     def __init__(self, parent=None) -> None:
         super().__init__(0, 4, parent)
@@ -315,36 +330,29 @@ class ProductTable(QtWidgets.QTableWidget):
 
         self.itemSelectionChanged.connect(self.row_selected)
 
-        self.refresh_table()
+        self.set_query(None)
 
-    TABLE_QUERY = """
-    SELECT p.rowid, name, quantity, sell_value
-    FROM Products p
-        INNER JOIN Inventory i
-        ON p.rowid = i.product
-    {where_clause}
-    ORDER BY
-        CASE
-            WHEN like(:name || '%', name) THEN 1
-            WHEN like(concat('% ', :name, '%'), name) THEN 2
-            ELSE 3
-        END, name
-    """
+    @QtCore.Slot(str)
+    def set_query(self, query: str | None) -> None:
+        if query is not None and query.strip():
+            self.query = query
+        else:
+            self.query = None
+        self.refresh_table()
 
     @QtCore.Slot(str)
     @QtCore.Slot(type(None))
-    def refresh_table(self, query: str | None = None):
+    def refresh_table(self):
         where_clause = (
-            " WHERE name LIKE concat('%', :name, '%')" if query is not None else ""
+            " WHERE name LIKE concat('%', :name, '%')" if self.query is not None else ""
         )
-        params = (query,) if query is not None else tuple()
 
         db = QtSql.QSqlDatabase.database()
         product_query = QtSql.QSqlQuery()
 
         product_query.prepare(self.TABLE_QUERY.format(where_clause=where_clause))
-        for param in params:
-            product_query.bindValue(":name", param)
+        if self.query is not None:
+            product_query.bindValue(":name", self.query)
 
         if not product_query.exec():
             print(product_query.lastError())
@@ -403,7 +411,7 @@ class InventoryWidget(QtWidgets.QWidget):
         product_table = ProductTable(self)
         self.product_table = product_table
 
-        topbar.search_submitted.connect(self.product_table.refresh_table)
+        topbar.search_submitted.connect(self.product_table.set_query)
 
         layout.addWidget(topbar)
         layout.addWidget(product_table)
@@ -430,5 +438,4 @@ class InventoryWidget(QtWidgets.QWidget):
         w = ProductInfoDialog()
         result = w.exec()
         if result == ProductInfoDialog.DialogCode.Accepted:
-            # FIXME: This should't reach into topbar like this probably.
-            self.topbar.search_edit_finished()
+            self.product_table.refresh_table()
