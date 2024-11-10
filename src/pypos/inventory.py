@@ -281,7 +281,8 @@ class InventoryProductActions(QtWidgets.QWidget):
 
         self.set_product(None)
 
-    @QtCore.Slot()
+    @QtCore.Slot(type(None))
+    @QtCore.Slot(int)
     def set_product(self, product_id: int | None) -> None:
         self.product_id = product_id
         if product_id is not None:
@@ -292,7 +293,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 
 class ProductTable(QtWidgets.QTableWidget):
     query: str | None
-    selected = QtCore.Signal(int)
+    selected = QtCore.Signal(object)
 
     TABLE_QUERY = """
     SELECT p.rowid, name, quantity, sell_value
@@ -391,6 +392,7 @@ class ProductTable(QtWidgets.QTableWidget):
             self.selectRow(0)
         else:
             self.clearSelection()
+        self.row_selected()
 
     @QtCore.Slot()
     def row_selected(self):
