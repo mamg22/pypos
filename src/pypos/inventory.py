@@ -387,6 +387,11 @@ class ProductTable(QtWidgets.QTableWidget):
 
                 self.setItem(row_num, idx, item)
 
+        if n_rows > 0 and self.query:
+            self.selectRow(0)
+        else:
+            self.clearSelection()
+
     @QtCore.Slot()
     def row_selected(self):
         try:
