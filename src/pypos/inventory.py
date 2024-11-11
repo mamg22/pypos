@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from sys import float_info
 
@@ -277,6 +279,11 @@ class InventoryProductActions(QtWidgets.QWidget):
         layout.addWidget(self.edit_button)
         layout.addWidget(self.delete_button)
 
+        self.to_cart_button.clicked.connect(self.product_carted)
+        self.quantity_button.clicked.connect(self.product_quantity)
+        self.edit_button.clicked.connect(self.product_edit)
+        self.delete_button.clicked.connect(self.product_delete)
+
         self.setLayout(layout)
 
         self.set_product(None)
@@ -289,6 +296,26 @@ class InventoryProductActions(QtWidgets.QWidget):
             self.show()
         else:
             self.hide()
+
+    @QtCore.Slot()
+    def product_carted(self) -> None:
+        if self.product_id is not None:
+            print("CART", self.product_id)
+
+    @QtCore.Slot()
+    def product_quantity(self) -> None:
+        if self.product_id is not None:
+            print("QUANTITY", self.product_id)
+
+    @QtCore.Slot()
+    def product_edit(self) -> None:
+        if self.product_id is not None:
+            print("EDIT", self.product_id)
+
+    @QtCore.Slot()
+    def product_delete(self) -> None:
+        if self.product_id is not None:
+            print("DELETE", self.product_id)
 
 
 class ProductTable(QtWidgets.QTableWidget):
