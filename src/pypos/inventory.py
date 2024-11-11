@@ -47,7 +47,8 @@ class InventoryTopBar(QtWidgets.QWidget):
 
         search_bar = QtWidgets.QLineEdit()
         self.search_bar = search_bar
-        search_bar.editingFinished.connect(self.search_edit_finished)
+        search_bar.textEdited.connect(self.search_edit_finished)
+        search_bar.setClearButtonEnabled(True)
 
         layout.addWidget(new_button)
         layout.addStretch()
@@ -59,9 +60,8 @@ class InventoryTopBar(QtWidgets.QWidget):
         self.new_product.emit()
 
     @QtCore.Slot()
-    def search_edit_finished(self):
-        text = self.search_bar.text()
-        self.search_submitted.emit(text)
+    def search_edit_finished(self, query: str):
+        self.search_submitted.emit(query)
 
 
 class ProductInfoDialog(QtWidgets.QDialog):
