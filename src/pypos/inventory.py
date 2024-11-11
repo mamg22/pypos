@@ -264,6 +264,8 @@ class ProductPreviewWidget(QtWidgets.QFrame):
 class InventoryProductActions(QtWidgets.QWidget):
     product_id: int | None
 
+    deleted = QtCore.Signal()
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -315,7 +317,24 @@ class InventoryProductActions(QtWidgets.QWidget):
     @QtCore.Slot()
     def product_delete(self) -> None:
         if self.product_id is not None:
-            print("DELETE", self.product_id)
+            StandardButton = QtWidgets.QMessageBox.StandardButton
+            confirm = QtWidgets.QMessageBox.warning(
+                self,
+                "¿Eliminar?",
+                "¿Está seguro de que desea eliminar este producto?\nEsta acción no se puede deshacer.",
+                buttons=(StandardButton.Yes | StandardButton.No),
+                defaultButton=StandardButton.No,
+            )
+
+            if confirm == StandardButton.Yes:
+                query = QtSql.QSqlQuery()
+                query.prepare("DELETE FROM Products WHERE rowid = :id")
+                query.bindValue(":id", self.product_id)
+
+                if not query.exec():
+                    print(query.lastError())
+                else:
+                    self.deleted.emit()
 
 
 class ProductTable(QtWidgets.QTableWidget):
@@ -462,6 +481,8 @@ class InventoryWidget(QtWidgets.QWidget):
 
         self.product_table.selected.connect(self.preview.show_product)
         self.product_table.selected.connect(self.product_actions.set_product)
+
+        self.product_actions.deleted.connect(self.product_table.refresh_table)
 
     @QtCore.Slot(str)
     def log_search(self, query: str):

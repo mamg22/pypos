@@ -1,5 +1,3 @@
-from decimal import Decimal
-import sqlite3
 import sys
 
 from PySide6 import QtCore, QtWidgets, QtSql
@@ -42,7 +40,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.close()
 
 
-SCHEMA: str = """\
+SCHEMA: list[str] = [
+    """\
 CREATE TABLE IF NOT EXISTS Products (
     name TEXT NOT NULL,
     purchase_currency TEXT NOT NULL,
@@ -52,15 +51,25 @@ CREATE TABLE IF NOT EXISTS Products (
     sell_value INTEGER NOT NULL,
     last_update INTEGER NOT NULL
 );
+""",
+    """\
 CREATE TABLE IF NOT EXISTS Inventory (
     product INTEGER NOT NULL,
     quantity INTEGER NOT NULL
 );
-"""
+""",
+    """\
+CREATE TRIGGER IF NOT EXISTS inventory_delete_from_products
+AFTER DELETE ON Products
+BEGIN
+    DELETE FROM Inventory WHERE product = old.rowid;
+END;
+""",
+]
 
 
 def build_database() -> None:
-    for statement in filter(lambda x: x.strip(), SCHEMA.split(";")):
+    for statement in SCHEMA:
         schema_query = QtSql.QSqlQuery()
         if not schema_query.exec(statement):
             print(schema_query.lastError().text())
