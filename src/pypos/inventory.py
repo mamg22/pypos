@@ -64,14 +64,26 @@ class InventoryTopBar(QtWidgets.QWidget):
         self.search_submitted.emit(query)
 
 
+def make_inverse_map(mapping: dict[str, str]) -> dict[str, str]:
+    new_map = {}
+    for key, value in mapping.items():
+        new_map[key] = value
+        new_map[value] = key
+
+    return new_map
+
+
 class ProductInfoDialog(QtWidgets.QDialog):
     product_id: int | None
 
     MAX_VALUE = 10 ** (float_info.dig - 3)
-    CURRENCY_MAPPING = {
-        "Bs": "BSD",
-        "$": "USD",
-    }
+    CURRENCY_MAPPING = make_inverse_map(
+        {
+            "Bs": "VED",
+            "$": "USD",
+        }
+    )
+
     INSERT_QUERY = """\
     INSERT INTO Products VALUES
         (:name, :purchase_currency, :purchase_value, :margin,
@@ -177,10 +189,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         if query.next():
             name = query.value(0)
-            purchase_currency = query.value(1)
+            purchase_currency = self.CURRENCY_MAPPING[query.value(1)]
             purchase_value = Decimal(query.value(2)) / 100
             margin = Decimal(query.value(3)) / 100
-            sell_currency = query.value(4)
+            sell_currency = self.CURRENCY_MAPPING[query.value(4)]
             sell_value = Decimal(query.value(5)) / 100
             quantity = query.value(6)
 
@@ -195,10 +207,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def accept(self):
         name = self.name.text()
-        purchase_currency = self.purchase_currency.currentText()
+        purchase_currency = self.CURRENCY_MAPPING[self.purchase_currency.currentText()]
         purchase_value = self.purchase_value.decimal_value()
         margin = self.margin.decimal_value()
-        sell_currency = self.sell_currency.currentText()
+        sell_currency = self.CURRENCY_MAPPING[self.sell_currency.currentText()]
         sell_value = self.sell_value.decimal_value()
         quantity = self.quantity.value()
 
