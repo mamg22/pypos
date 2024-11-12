@@ -549,7 +549,9 @@ class ProductTable(QtWidgets.QTableWidget):
                 flags=Qt.MatchFlag.MatchExactly,
             )
             if found:
-                self.selectRow(found[0].row())
+                idx = found[0]
+                self.selectRow(idx.row())
+                self.scrollTo(idx)
 
 
 class InventoryWidget(QtWidgets.QWidget):
