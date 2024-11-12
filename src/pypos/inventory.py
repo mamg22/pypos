@@ -550,7 +550,6 @@ class InventoryWidget(QtWidgets.QWidget):
         topbar = InventoryTopBar()
         self.topbar = topbar
         topbar.new_product.connect(self.new)
-        topbar.search_submitted.connect(self.log_search)
 
         product_table = ProductTable(self)
         self.product_table = product_table
@@ -575,10 +574,6 @@ class InventoryWidget(QtWidgets.QWidget):
 
         self.product_actions.deleted.connect(self.product_table.refresh_table)
         self.product_actions.edit_requested.connect(self.edit)
-
-    @QtCore.Slot(str)
-    def log_search(self, query: str):
-        print(query)
 
     @QtCore.Slot()
     def new(self):
