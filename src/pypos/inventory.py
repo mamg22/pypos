@@ -65,6 +65,8 @@ class InventoryTopBar(QtWidgets.QWidget):
 
 
 class ProductInfoDialog(QtWidgets.QDialog):
+    product_id: int | None
+
     MAX_VALUE = 10 ** (float_info.dig - 3)
     CURRENCY_MAPPING = {
         "Bs": "BSD",
@@ -75,9 +77,28 @@ class ProductInfoDialog(QtWidgets.QDialog):
         (:name, :purchase_currency, :purchase_value, :margin,
          :sell_currency, :sell_value, unixepoch())
     """
+    LOAD_QUERY = """\
+    SELECT name, purchase_currency, purchase_value, margin, sell_currency, sell_value, quantity
+    FROM Products p
+    INNER JOIN Inventory i
+        ON p.rowid = i.product
+    WHERE p.rowid = :id
+    """
+    UPDATE_QUERY = """\
+    UPDATE Products SET
+        name = :name,
+        purchase_currency = :purchase_currency,
+        purchase_value = :purchase_value,
+        margin = :margin,
+        sell_currency = :sell_currency,
+        sell_value = :sell_value
+    WHERE rowid = :id
+    """
 
-    def __init__(self) -> None:
+    def __init__(self, product_id: int | None = None) -> None:
         super().__init__()
+
+        self.product_id = product_id
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -142,6 +163,35 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         layout.addWidget(buttons)
 
+        if self.product_id is not None:
+            self.load_existing_product(self.product_id)
+
+    def load_existing_product(self, id: int) -> None:
+        query = QtSql.QSqlQuery()
+        query.prepare(self.LOAD_QUERY)
+        query.bindValue(":id", id)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+
+        if query.next():
+            name = query.value(0)
+            purchase_currency = query.value(1)
+            purchase_value = Decimal(query.value(2)) / 100
+            margin = Decimal(query.value(3)) / 100
+            sell_currency = query.value(4)
+            sell_value = Decimal(query.value(5)) / 100
+            quantity = query.value(6)
+
+            self.name.setText(name)
+            self.purchase_currency.setCurrentText(purchase_currency)
+            self.purchase_value.setValue(float(purchase_value))
+            self.margin.setValue(float(margin))
+            self.sell_currency.setCurrentText(sell_currency)
+            self.sell_value.setValue(float(sell_value))
+            self.quantity.setValue(quantity)
+
     @QtCore.Slot()
     def accept(self):
         name = self.name.text()
@@ -152,8 +202,19 @@ class ProductInfoDialog(QtWidgets.QDialog):
         sell_value = self.sell_value.decimal_value()
         quantity = self.quantity.value()
 
+        is_update = self.product_id is not None
+
+        db = QtSql.QSqlDatabase.database()
+        db.transaction()
+
         query = QtSql.QSqlQuery()
-        query.prepare(self.INSERT_QUERY)
+
+        if is_update:
+            query_string = self.UPDATE_QUERY
+        else:
+            query_string = self.INSERT_QUERY
+
+        query.prepare(query_string)
 
         query.bindValue(":name", name)
         query.bindValue(":purchase_currency", purchase_currency)
@@ -162,30 +223,45 @@ class ProductInfoDialog(QtWidgets.QDialog):
         query.bindValue(":sell_currency", sell_currency)
         query.bindValue(":sell_value", int(sell_value * 100))
 
+        if is_update:
+            query.bindValue(":id", self.product_id)
+
         if not query.exec():
             print(query.lastError())
+            db.rollback()
+            return
 
-        item_id = query.lastInsertId()
+        if is_update:
+            query.prepare("UPDATE Inventory SET quantity = :quantity WHERE rowid = :id")
+        else:
+            self.product_id = query.lastInsertId()
+            query.prepare("INSERT INTO Inventory VALUES (:id, :quantity)")
 
-        query = QtSql.QSqlQuery()
-        query.prepare("INSERT INTO Inventory VALUES (:id, :quantity)")
-
-        query.bindValue(":id", item_id)
+        query.bindValue(":id", self.product_id)
         query.bindValue(":quantity", quantity)
 
         if not query.exec():
             print(query.lastError())
+            db.rollback()
+            return
+
+        if not db.commit():
+            print(query.lastError())
+            return
 
         super().accept()
 
     @QtCore.Slot()
     def on_reset(self):
-        self.name.clear()
-        self.purchase_currency.setCurrentIndex(0)
-        self.purchase_value.setValue(0)
-        self.margin.setValue(0)
-        self.sell_currency.setCurrentIndex(0)
-        self.sell_value.setValue(0)
+        if self.product_id is not None:
+            self.load_existing_product(self.product_id)
+        else:
+            self.name.clear()
+            self.purchase_currency.setCurrentIndex(0)
+            self.purchase_value.setValue(0)
+            self.margin.setValue(0)
+            self.sell_currency.setCurrentIndex(0)
+            self.sell_value.setValue(0)
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
@@ -265,6 +341,7 @@ class InventoryProductActions(QtWidgets.QWidget):
     product_id: int | None
 
     deleted = QtCore.Signal()
+    edit_requested = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -312,7 +389,7 @@ class InventoryProductActions(QtWidgets.QWidget):
     @QtCore.Slot()
     def product_edit(self) -> None:
         if self.product_id is not None:
-            print("EDIT", self.product_id)
+            self.edit_requested.emit(self.product_id)
 
     @QtCore.Slot()
     def product_delete(self) -> None:
@@ -448,6 +525,20 @@ class ProductTable(QtWidgets.QTableWidget):
         except IndexError:
             self.selected.emit(None)
 
+    @QtCore.Slot(int)
+    def focus_product(self, product_id: int) -> None:
+        model = self.model()
+
+        if model.hasIndex(0, 0):
+            found = model.match(
+                model.index(0, 0),
+                Qt.ItemDataRole.UserRole,
+                product_id,
+                flags=Qt.MatchFlag.MatchExactly,
+            )
+            if found:
+                self.selectRow(found[0].row())
+
 
 class InventoryWidget(QtWidgets.QWidget):
     def __init__(self) -> None:
@@ -483,6 +574,7 @@ class InventoryWidget(QtWidgets.QWidget):
         self.product_table.selected.connect(self.product_actions.set_product)
 
         self.product_actions.deleted.connect(self.product_table.refresh_table)
+        self.product_actions.edit_requested.connect(self.edit)
 
     @QtCore.Slot(str)
     def log_search(self, query: str):
@@ -494,3 +586,11 @@ class InventoryWidget(QtWidgets.QWidget):
         result = w.exec()
         if result == ProductInfoDialog.DialogCode.Accepted:
             self.product_table.refresh_table()
+
+    @QtCore.Slot(int)
+    def edit(self, product_id: int) -> None:
+        dialog = ProductInfoDialog(product_id)
+        result = dialog.exec()
+        if result == ProductInfoDialog.DialogCode.Accepted:
+            self.product_table.refresh_table()
+            self.product_table.focus_product(product_id)
