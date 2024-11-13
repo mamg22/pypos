@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, DivisionByZero
 from sys import float_info
 
 from PySide6 import QtCore, QtWidgets, QtSql, QtGui
@@ -137,7 +137,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         self.margin = DecimalSpinBox()
         self.margin.setSuffix("%")
-        self.margin.setMaximum(self.MAX_VALUE)
+        self.margin.setRange(-self.MAX_VALUE, self.MAX_VALUE)
         form_layout.addRow("Margen:", self.margin)
 
         self.sell_currency = QtWidgets.QComboBox()
@@ -174,6 +174,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
         buttons.button(SB.Reset).clicked.connect(self.on_reset)
 
         layout.addWidget(buttons)
+
+        self.purchase_value.valueChanged.connect(self.update_sale_value)
+        self.margin.valueChanged.connect(self.update_sale_value)
+        self.sell_value.valueChanged.connect(self.update_margin)
 
         if self.product_id is not None:
             self.load_existing_product(self.product_id)
@@ -274,6 +278,28 @@ class ProductInfoDialog(QtWidgets.QDialog):
             self.margin.setValue(0)
             self.sell_currency.setCurrentIndex(0)
             self.sell_value.setValue(0)
+
+    @QtCore.Slot(float)
+    def update_sale_value(self, new_value: float) -> None:
+        purchase_value = self.purchase_value.decimal_value()
+        margin = Decimal(1) + self.margin.decimal_value() / 100
+
+        value = purchase_value * margin
+        with QtCore.QSignalBlocker(self.sell_value):
+            self.sell_value.setValue(float(value))
+
+    @QtCore.Slot(float)
+    def update_margin(self, new_value: float) -> None:
+        purchase_value = self.purchase_value.decimal_value()
+        sell_value = self.sell_value.decimal_value()
+
+        try:
+            margin = (sell_value / purchase_value - Decimal(1)) * 100
+        except DivisionByZero:
+            margin = Decimal(0)
+
+        with QtCore.QSignalBlocker(self.margin):
+            self.margin.setValue(float(margin))
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
