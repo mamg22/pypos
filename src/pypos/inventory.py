@@ -103,10 +103,19 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.name.setMinimumWidth(300)
         form_layout.addRow("Nombre:", self.name)
 
+        currencies = [
+            # Text: Symbol, UserData: Code
+            ("Bs", "VED"),
+            ("$", "USD"),
+        ]
+
         purchase_price_layout = QtWidgets.QHBoxLayout()
 
         self.purchase_currency = QtWidgets.QComboBox()
-        self.purchase_currency.addItems(["Bs", "$"])
+
+        for currency in currencies:
+            self.purchase_currency.addItem(*currency)
+        self.current_purchase_currency = currencies[0][1]
 
         self.purchase_value = DecimalSpinBox()
         self.purchase_value.setMaximum(MAX_SAFE_DOUBLE)
@@ -124,7 +133,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
         form_layout.addRow("Margen:", self.margin)
 
         self.sell_currency = QtWidgets.QComboBox()
-        self.sell_currency.addItems(["Bs", "$"])
+
+        for currency in currencies:
+            self.sell_currency.addItem(*currency)
+        self.sell_purchase_currency = currencies[0][1]
 
         self.sell_value = DecimalSpinBox()
         self.sell_value.setMaximum(MAX_SAFE_DOUBLE)
@@ -176,28 +188,32 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         if query.next():
             name = query.value(0)
-            purchase_currency = self.CURRENCY_MAPPING[query.value(1)]
+            purchase_currency = query.value(1)
             purchase_value = Decimal(query.value(2)) / 100
             margin = Decimal(query.value(3)) / 100
-            sell_currency = self.CURRENCY_MAPPING[query.value(4)]
+            sell_currency = query.value(4)
             sell_value = Decimal(query.value(5)) / 100
             quantity = query.value(6)
 
             self.name.setText(name)
-            self.purchase_currency.setCurrentText(purchase_currency)
+            self.purchase_currency.setCurrentIndex(
+                self.purchase_currency.findData(purchase_currency)
+            )
             self.purchase_value.setValue(float(purchase_value))
             self.margin.setValue(float(margin))
-            self.sell_currency.setCurrentText(sell_currency)
+            self.sell_currency.setCurrentIndex(
+                self.sell_currency.findData(sell_currency)
+            )
             self.sell_value.setValue(float(sell_value))
             self.quantity.setValue(quantity)
 
     @QtCore.Slot()
     def accept(self):
         name = self.name.text()
-        purchase_currency = self.CURRENCY_MAPPING[self.purchase_currency.currentText()]
+        purchase_currency = self.purchase_currency.currentData()
         purchase_value = self.purchase_value.decimal_value()
         margin = self.margin.decimal_value()
-        sell_currency = self.CURRENCY_MAPPING[self.sell_currency.currentText()]
+        sell_currency = self.sell_currency.currentData()
         sell_value = self.sell_value.decimal_value()
         quantity = self.quantity.value()
 
