@@ -158,12 +158,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         layout.addWidget(buttons)
 
+        if self.product_id is not None:
+            self.load_existing_product(self.product_id)
+
         self.purchase_value.valueChanged.connect(self.update_sale_value)
         self.margin.valueChanged.connect(self.update_sale_value)
         self.sell_value.valueChanged.connect(self.update_margin)
-
-        if self.product_id is not None:
-            self.load_existing_product(self.product_id)
 
     def load_existing_product(self, id: int) -> None:
         query = QtSql.QSqlQuery()
