@@ -262,8 +262,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
             self.sell_currency.setCurrentIndex(0)
             self.sell_value.setValue(0)
 
-    @QtCore.Slot(float)
-    def update_sale_value(self, new_value: float) -> None:
+    @QtCore.Slot()
+    def update_sale_value(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         margin = Decimal(1) + self.margin.decimal_value() / 100
 
@@ -271,8 +271,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
         with QtCore.QSignalBlocker(self.sell_value):
             self.sell_value.setValue(float(value))
 
-    @QtCore.Slot(float)
-    def update_margin(self, new_value: float) -> None:
+    @QtCore.Slot()
+    def update_margin(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         sell_value = self.sell_value.decimal_value()
 
