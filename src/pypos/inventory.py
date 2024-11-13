@@ -3,26 +3,10 @@ from __future__ import annotations
 from decimal import Decimal, DivisionByZero
 from sys import float_info
 
-from PySide6 import QtCore, QtWidgets, QtSql, QtGui
+from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
 
-
-LOCALE_DECIMAL_SEP = QtCore.QLocale().decimalPoint()
-LOCALE_GROUP_SEP = QtCore.QLocale().groupSeparator()
-
-
-class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
-    def validate(self, input: str, pos: int) -> object:
-        if LOCALE_GROUP_SEP in input:
-            return QtGui.QValidator.State.Invalid
-        return super().validate(input, pos)
-
-    def decimal_value(self) -> Decimal:
-        value_text = self._fixup_decimal(self.cleanText())
-        return Decimal(value_text)
-
-    def _fixup_decimal(self, value: str) -> str:
-        return value.replace(LOCALE_DECIMAL_SEP, ".", 1)
+from .common import DecimalSpinBox, MAX_SAFE_DOUBLE
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -76,7 +60,6 @@ def make_inverse_map(mapping: dict[str, str]) -> dict[str, str]:
 class ProductInfoDialog(QtWidgets.QDialog):
     product_id: int | None
 
-    MAX_VALUE = 10 ** (float_info.dig - 3)
     CURRENCY_MAPPING = make_inverse_map(
         {
             "Bs": "VED",
@@ -126,7 +109,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.purchase_currency.addItems(["Bs", "$"])
 
         self.purchase_value = DecimalSpinBox()
-        self.purchase_value.setMaximum(self.MAX_VALUE)
+        self.purchase_value.setMaximum(MAX_SAFE_DOUBLE)
 
         purchase_price_layout.addWidget(self.purchase_currency)
         purchase_price_layout.addWidget(self.purchase_value, 1)
@@ -137,14 +120,14 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         self.margin = DecimalSpinBox()
         self.margin.setSuffix("%")
-        self.margin.setRange(-self.MAX_VALUE, self.MAX_VALUE)
+        self.margin.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
         form_layout.addRow("Margen:", self.margin)
 
         self.sell_currency = QtWidgets.QComboBox()
         self.sell_currency.addItems(["Bs", "$"])
 
         self.sell_value = DecimalSpinBox()
-        self.sell_value.setMaximum(self.MAX_VALUE)
+        self.sell_value.setMaximum(MAX_SAFE_DOUBLE)
 
         sell_price_layout.addWidget(self.sell_currency)
         sell_price_layout.addWidget(self.sell_value, 1)

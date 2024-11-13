@@ -1,8 +1,10 @@
+from datetime import datetime
 import sys
+from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
 
-from pypos import inventory
+from . import inventory, settings
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -21,19 +23,44 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(self.tabs)
 
-        self.exchange_rate = QtWidgets.QLabel("$ BCV: 42.89 Bs")
+        self.exchange_rate = QtWidgets.QLabel()
         rate_font = self.exchange_rate.font()
         rate_font.setPointSize(rate_font.pointSize() + 2)
         self.exchange_rate.setFont(rate_font)
+        self.update_rate()
 
         self.statusBar().addPermanentWidget(self.exchange_rate, 1)
 
-        file_menu = QtWidgets.QMenu("File")
-        file_menu.addAction("Save")
-        file_menu.addSeparator()
-        exit_action = file_menu.addAction("Exit")
+        app_menu = QtWidgets.QMenu("Aplicación")
+        exit_action = app_menu.addAction("Salir")
         exit_action.triggered.connect(self.bye)
-        self.menuBar().addMenu(file_menu)
+
+        options_menu = QtWidgets.QMenu("Opciones")
+        settings_action = options_menu.addAction("Tasa de cambio...")
+        settings_action.triggered.connect(self.show_rate_window)
+
+        self.menuBar().addMenu(app_menu)
+        self.menuBar().addMenu(options_menu)
+
+    @QtCore.Slot()
+    def update_rate(self) -> None:
+        settings = QtCore.QSettings()
+        value = str(settings.value("USD-VED-rate", 0))
+        last_update = cast(float | None, settings.value("last-rate-update", None))
+        if last_update is not None:
+            last_update_date = datetime.fromtimestamp(float(last_update))
+            self.exchange_rate.setText(
+                f"Tasa dólar: {value} Bs, {last_update_date:%d de %B %Y}"
+            )
+        else:
+            self.exchange_rate.setText("Tasa dólar: No establecido")
+
+    @QtCore.Slot()
+    def show_rate_window(self) -> None:
+        rate_dialog = settings.ExchangeRateWindow()
+        result = rate_dialog.exec()
+        if result == rate_dialog.DialogCode.Accepted:
+            self.update_rate()
 
     @QtCore.Slot()
     def bye(self):
