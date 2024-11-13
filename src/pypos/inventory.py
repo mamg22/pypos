@@ -136,7 +136,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         for currency in currencies:
             self.sell_currency.addItem(*currency)
-        self.sell_purchase_currency = currencies[0][1]
+        self.current_purchase_currency = currencies[0][1]
 
         self.sell_value = DecimalSpinBox()
         self.sell_value.setMaximum(MAX_SAFE_DOUBLE)
