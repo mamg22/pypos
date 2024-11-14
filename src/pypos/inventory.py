@@ -218,14 +218,21 @@ class ProductInfoDialog(QtWidgets.QDialog):
             quantity = query.value(6)
 
             self.name.setText(name)
-            self.purchase_currency.setCurrentIndex(
-                self.purchase_currency.findData(purchase_currency)
-            )
+
+            p_currency = self.purchase_currency.findData(purchase_currency)
+            self.purchase_currency.setCurrentIndex(p_currency)
+            self.current_purchase_currency = purchase_currency
+
             self.purchase_value.setValue(float(purchase_value))
             self.margin.setValue(float(margin))
             self.sell_currency.setCurrentIndex(
                 self.sell_currency.findData(sell_currency)
             )
+
+            s_currency = self.sell_currency.findData(sell_currency)
+            self.sell_currency.setCurrentIndex(s_currency)
+            self.current_sell_currency = sell_currency
+
             self.sell_value.setValue(float(sell_value))
             self.quantity.setValue(quantity)
 
