@@ -15,7 +15,7 @@ class ExchangeRateWindow(QtWidgets.QDialog):
         form_layout = QtWidgets.QFormLayout()
 
         self.exchange_rate = DecimalSpinBox()
-        self.exchange_rate.setMaximum(MAX_SAFE_DOUBLE)
+        self.exchange_rate.setRange(0.01, MAX_SAFE_DOUBLE)
 
         self.load_previous_rate()
 
