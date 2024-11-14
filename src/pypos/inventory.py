@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, DivisionByZero
-from sys import float_info
+from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
@@ -55,6 +55,26 @@ def make_inverse_map(mapping: dict[str, str]) -> dict[str, str]:
         new_map[value] = key
 
     return new_map
+
+
+def adjust_value(source_currency: str, target_currency: str, value: Decimal) -> Decimal:
+    if source_currency == target_currency:
+        return value
+
+    rate_src = cast(str, QtCore.QSettings().value("USD-VED-rate", 1, type=str))
+    rate = Decimal(rate_src)
+
+    match (source_currency, target_currency):
+        case ("VED", "USD"):
+            return value / rate
+        case ("USD", "VED"):
+            return value * rate
+        case _:
+            raise ValueError(
+                "Unknown rate conversion {}->{}".format(
+                    source_currency, target_currency
+                )
+            )
 
 
 class ProductInfoDialog(QtWidgets.QDialog):
@@ -136,7 +156,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         for currency in currencies:
             self.sell_currency.addItem(*currency)
-        self.current_purchase_currency = currencies[0][1]
+        self.current_sell_currency = currencies[0][1]
 
         self.sell_value = DecimalSpinBox()
         self.sell_value.setMaximum(MAX_SAFE_DOUBLE)
@@ -173,8 +193,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
         if self.product_id is not None:
             self.load_existing_product(self.product_id)
 
-        self.purchase_value.valueChanged.connect(self.update_sale_value)
-        self.margin.valueChanged.connect(self.update_sale_value)
+        self.purchase_currency.currentIndexChanged.connect(self.update_purchase_value)
+        self.purchase_value.valueChanged.connect(self.update_sell_value)
+        self.margin.valueChanged.connect(self.update_sell_value)
+        self.sell_currency.currentIndexChanged.connect(self.update_sell_value)
         self.sell_value.valueChanged.connect(self.update_margin)
 
     def load_existing_product(self, id: int) -> None:
@@ -279,11 +301,33 @@ class ProductInfoDialog(QtWidgets.QDialog):
             self.sell_value.setValue(0)
 
     @QtCore.Slot()
-    def update_sale_value(self) -> None:
+    def update_purchase_value(self) -> None:
+        purchase_value = self.purchase_value.decimal_value()
+        purchase_currency = self.purchase_currency.currentData()
+
+        value = adjust_value(
+            self.current_purchase_currency, purchase_currency, purchase_value
+        )
+        self.current_purchase_currency = purchase_currency
+
+        self.purchase_value.setValue(float(value))
+
+    @QtCore.Slot()
+    def update_sell_value(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         margin = Decimal(1) + self.margin.decimal_value() / 100
 
+        purchase_value = adjust_value(
+            self.current_purchase_currency, self.current_sell_currency, purchase_value
+        )
+
         value = purchase_value * margin
+
+        sell_currency = self.sell_currency.currentData()
+
+        value = adjust_value(self.current_sell_currency, sell_currency, value)
+        self.current_sell_currency = sell_currency
+
         with QtCore.QSignalBlocker(self.sell_value):
             self.sell_value.setValue(float(value))
 
@@ -291,6 +335,13 @@ class ProductInfoDialog(QtWidgets.QDialog):
     def update_margin(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         sell_value = self.sell_value.decimal_value()
+
+        sell_currency = self.sell_currency.currentData()
+
+        purchase_value = adjust_value(
+            self.current_purchase_currency, sell_currency, purchase_value
+        )
+        sell_value = adjust_value(self.current_sell_currency, sell_currency, sell_value)
 
         try:
             margin = (sell_value / purchase_value - Decimal(1)) * 100
