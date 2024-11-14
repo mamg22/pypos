@@ -431,6 +431,10 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         else:
             self.hide()
 
+    @QtCore.Slot()
+    def refresh(self) -> None:
+        self.show_product(self.current_id)
+
 
 class InventoryProductActions(QtWidgets.QWidget):
     product_id: int | None
@@ -514,7 +518,7 @@ class ProductTable(QtWidgets.QTableWidget):
     selected = QtCore.Signal(object)
 
     TABLE_QUERY = """
-    SELECT p.rowid, name, quantity, sell_value
+    SELECT p.rowid, name, quantity, sell_currency, sell_value
     FROM Products p
         INNER JOIN Inventory i
         ON p.rowid = i.product
@@ -591,19 +595,33 @@ class ProductTable(QtWidgets.QTableWidget):
 
         for row_num in range(n_rows):
             product_query.next()
-            row_id, name, quantity, sell_value = (
+            row_id, name, quantity, sell_currency, int_sell_value = (
                 product_query.value(i) for i in range(product_query.record().count())
             )
-            sell_value = Decimal(sell_value) / 100
-            for idx, value in enumerate((name, quantity, sell_value, sell_value)):
-                item = QtWidgets.QTableWidgetItem(str(value))
+            sell_value = Decimal(int_sell_value) / 100
 
-                if isinstance(value, int | float | Decimal):
-                    item.setTextAlignment(number_align)
-                    item.setText(f"{value:.2f}")
-                item.setFlags(row_flags)
-                item.setData(Qt.ItemDataRole.UserRole, row_id)
+            base_item = QtWidgets.QTableWidgetItem()
+            base_item.setFlags(row_flags)
+            base_item.setData(Qt.ItemDataRole.UserRole, row_id)
 
+            name_item = base_item.clone()
+            name_item.setText(name)
+
+            quantity_item = base_item.clone()
+            quantity_item.setText(str(quantity))
+            quantity_item.setTextAlignment(number_align)
+
+            dolar_value = adjust_value(sell_currency, "USD", sell_value)
+            dolar_item = base_item.clone()
+            dolar_item.setText(f"{dolar_value:.2f}")
+            dolar_item.setTextAlignment(number_align)
+
+            bs_value = adjust_value(sell_currency, "VED", sell_value)
+            bs_item = base_item.clone()
+            bs_item.setText(f"{bs_value:.2f}")
+            bs_item.setTextAlignment(number_align)
+
+            for idx, item in enumerate((name_item, quantity_item, dolar_item, bs_item)):
                 self.setItem(row_num, idx, item)
 
         if n_rows > 0 and self.query:
@@ -686,3 +704,9 @@ class InventoryWidget(QtWidgets.QWidget):
         if result == ProductInfoDialog.DialogCode.Accepted:
             self.product_table.refresh_table()
             self.product_table.focus_product(product_id)
+
+    @QtCore.Slot()
+    def refresh(self) -> None:
+        current_id = self.preview.current_id
+        self.product_table.refresh_table()
+        self.product_table.focus_product(current_id)

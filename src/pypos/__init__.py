@@ -61,6 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
         result = rate_dialog.exec()
         if result == rate_dialog.DialogCode.Accepted:
             self.update_rate()
+            self.inventory.refresh()
 
     @QtCore.Slot()
     def bye(self):
