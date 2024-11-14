@@ -675,20 +675,32 @@ class InventoryWidget(QtWidgets.QWidget):
         layout.addWidget(product_table)
 
         bottom = QtWidgets.QHBoxLayout()
-        self.bottom = bottom
         self.preview = ProductPreviewWidget()
         self.product_actions = InventoryProductActions()
 
+        bottom.setContentsMargins(0, 0, 0, 0)
         bottom.addWidget(self.preview, 1)
         bottom.addWidget(self.product_actions)
 
-        layout.addLayout(bottom)
+        bottom_widget = QtWidgets.QWidget()
+        bottom_widget.setLayout(bottom)
+
+        layout.addWidget(bottom_widget)
+        self.bottom = bottom_widget
 
         self.product_table.selected.connect(self.preview.show_product)
         self.product_table.selected.connect(self.product_actions.set_product)
+        self.product_table.selected.connect(self.toggle_bottom)
 
         self.product_actions.deleted.connect(self.product_table.refresh_table)
         self.product_actions.edit_requested.connect(self.edit)
+
+    @QtCore.Slot(object)
+    def toggle_bottom(self, product_id: int | None) -> None:
+        if product_id is not None:
+            self.bottom.show()
+        else:
+            self.bottom.hide()
 
     @QtCore.Slot()
     def new(self):
