@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal, DivisionByZero
 from typing import cast
 
@@ -362,6 +363,14 @@ class ProductInfoDialog(QtWidgets.QDialog):
 class ProductPreviewWidget(QtWidgets.QFrame):
     current_id: int | None
 
+    PRODUCT_QUERY = """\
+        SELECT name, purchase_currency, purchase_value, margin, sell_currency,
+               sell_value, last_update, quantity
+        FROM Products p
+            INNER JOIN Inventory i
+            ON p.rowid = i.product
+        WHERE p.rowid = :id"""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -378,6 +387,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         grid = QtWidgets.QGridLayout()
         self.grid = grid
         self.setLayout(grid)
+        grid.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.name_label = QtWidgets.QLabel()
 
@@ -388,12 +398,26 @@ class ProductPreviewWidget(QtWidgets.QFrame):
 
         self.price_label = QtWidgets.QLabel()
         self.quantity_label = QtWidgets.QLabel()
+        self.purchase_label = QtWidgets.QLabel()
+        self.last_update_label = QtWidgets.QLabel()
+        self.margin_label = QtWidgets.QLabel()
+        self.profit_label = QtWidgets.QLabel()
+        self.inventory_value_label = QtWidgets.QLabel()
+        self.inventory_sell_value_label = QtWidgets.QLabel()
+        self.expected_profit_label = QtWidgets.QLabel()
 
         self.grid.addWidget(self.name_label, 0, 0)
         self.grid.addWidget(
             self.price_label, 0, 1, alignment=Qt.AlignmentFlag.AlignRight
         )
         self.grid.addWidget(self.quantity_label, 1, 0)
+        self.grid.addWidget(self.purchase_label, 2, 0)
+        self.grid.addWidget(self.last_update_label, 3, 0)
+        self.grid.addWidget(self.margin_label, 4, 0)
+        self.grid.addWidget(self.profit_label, 5, 0)
+        self.grid.addWidget(self.inventory_value_label, 6, 0)
+        self.grid.addWidget(self.inventory_sell_value_label, 7, 0)
+        self.grid.addWidget(self.expected_profit_label, 8, 0)
 
         self.show_product(None)
 
@@ -404,12 +428,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.show()
 
         product_query = QtSql.QSqlQuery()
-        prepared = product_query.prepare("""\
-            SELECT name, quantity, sell_value
-            FROM Products p
-                INNER JOIN Inventory i
-                ON p.rowid = i.product
-            WHERE p.rowid = :id""")
+        prepared = product_query.prepare(self.PRODUCT_QUERY)
 
         if not prepared:
             print(product_query.lastError())
@@ -420,13 +439,50 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             print(product_query.lastError())
 
         if product_query.next():
-            name = product_query.value(0)
-            quantity = product_query.value(1)
-            price = Decimal(product_query.value(2)) / 100
+            (
+                name,
+                purchase_currency,
+                purchase_value,
+                margin,
+                sell_currency,
+                sell_value,
+                last_update,
+                quantity,
+            ) = (product_query.value(i) for i in range(product_query.record().count()))
+
+            purchase_value = Decimal(purchase_value) / 100
+            margin = Decimal(margin) / 100
+            sell_value = Decimal(sell_value) / 100
+            last_update = datetime.fromtimestamp(last_update)
+
+            profit = sell_value - adjust_value(
+                purchase_currency, sell_currency, purchase_value
+            )
+            inventory_value = purchase_value * quantity
+            inventory_sell_value = sell_value * quantity
+            expected_profit = (
+                adjust_value(purchase_currency, sell_currency, inventory_value)
+                - inventory_sell_value
+            )
 
             self.name_label.setText(f"{name}")
-            self.price_label.setText(f"{price:.2f}")
+            self.price_label.setText(f"{sell_currency} {sell_value:.2f}")
             self.quantity_label.setText(f"Existencias: {quantity}")
+            self.purchase_label.setText(
+                f"Valor de compra: {purchase_currency} {purchase_value}"
+            )
+            self.last_update_label.setText(f"Último cambio: {last_update}")
+            self.margin_label.setText(f"Margen de ganancia: {margin:.2f}%")
+            self.profit_label.setText(f"Ganancia: {sell_currency} {profit:.2f}")
+            self.inventory_value_label.setText(
+                f"Valor total del inventario: {purchase_currency} {inventory_value:.2f}"
+            )
+            self.inventory_sell_value_label.setText(
+                f"Valor total de venta: {sell_currency} {inventory_sell_value:.2f}"
+            )
+            self.expected_profit_label.setText(
+                f"Ganancia total esperada: {sell_currency} {expected_profit:.2f}"
+            )
             self.show()
         else:
             self.hide()
