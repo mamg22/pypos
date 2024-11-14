@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal, DivisionByZero
 
-from PySide6 import QtCore, QtWidgets, QtSql
+from PySide6 import QtCore, QtWidgets, QtSql, QtGui
 from PySide6.QtCore import Qt
 
 from .common import DecimalSpinBox, MAX_SAFE_DOUBLE, adjust_value
@@ -85,6 +85,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         self.name = QtWidgets.QLineEdit()
         self.name.setMinimumWidth(300)
+        # Required format: "word" or "word word..."
+        self.name.setValidator(QtGui.QRegularExpressionValidator(R"\S+(\s\S+)*"))
         form_layout.addRow("Nombre:", self.name)
 
         currencies = [
@@ -202,7 +204,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
     @QtCore.Slot()
     def accept(self):
-        name = self.name.text()
+        name = self.name.text().strip()
         purchase_currency = self.purchase_currency.currentData()
         purchase_value = self.purchase_value.decimal_value()
         margin = self.margin.decimal_value()
