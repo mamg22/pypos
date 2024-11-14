@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal, DivisionByZero
-from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
 
-from .common import DecimalSpinBox, MAX_SAFE_DOUBLE
+from .common import DecimalSpinBox, MAX_SAFE_DOUBLE, adjust_value
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -49,44 +48,8 @@ class InventoryTopBar(QtWidgets.QWidget):
         self.search_submitted.emit(query)
 
 
-def make_inverse_map(mapping: dict[str, str]) -> dict[str, str]:
-    new_map = {}
-    for key, value in mapping.items():
-        new_map[key] = value
-        new_map[value] = key
-
-    return new_map
-
-
-def adjust_value(source_currency: str, target_currency: str, value: Decimal) -> Decimal:
-    if source_currency == target_currency:
-        return value
-
-    rate_src = cast(str, QtCore.QSettings().value("USD-VED-rate", 1, type=str))
-    rate = Decimal(rate_src)
-
-    match (source_currency, target_currency):
-        case ("VED", "USD"):
-            return value / rate
-        case ("USD", "VED"):
-            return value * rate
-        case _:
-            raise ValueError(
-                "Unknown rate conversion {}->{}".format(
-                    source_currency, target_currency
-                )
-            )
-
-
 class ProductInfoDialog(QtWidgets.QDialog):
     product_id: int | None
-
-    CURRENCY_MAPPING = make_inverse_map(
-        {
-            "Bs": "VED",
-            "$": "USD",
-        }
-    )
 
     INSERT_QUERY = """\
     INSERT INTO Products VALUES

@@ -1,5 +1,6 @@
 from decimal import Decimal
 from sys import float_info
+from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtGui
 
@@ -22,3 +23,23 @@ class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
 
 
 MAX_SAFE_DOUBLE = 10 ** (float_info.dig - 3)
+
+
+def adjust_value(source_currency: str, target_currency: str, value: Decimal) -> Decimal:
+    if source_currency == target_currency:
+        return value
+
+    rate_src = cast(str, QtCore.QSettings().value("USD-VED-rate", 1, type=str))
+    rate = Decimal(rate_src)
+
+    match (source_currency, target_currency):
+        case ("VED", "USD"):
+            return value / rate
+        case ("USD", "VED"):
+            return value * rate
+        case _:
+            raise ValueError(
+                "Unknown rate conversion {}->{}".format(
+                    source_currency, target_currency
+                )
+            )
