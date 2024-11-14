@@ -1,4 +1,5 @@
 from datetime import datetime
+import decimal
 import sys
 from typing import cast
 
@@ -104,6 +105,8 @@ def build_database() -> None:
 
 
 def main() -> None:
+    decimal.getcontext().prec = 2
+
     app = QtWidgets.QApplication([])
     app.setOrganizationName("m2software")
     app.setApplicationName("pypos")
