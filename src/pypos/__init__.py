@@ -5,6 +5,7 @@ from typing import cast
 from PySide6 import QtCore, QtWidgets, QtSql
 
 from . import inventory, settings
+from .cart import CartWidget
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -12,7 +13,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.inventory = inventory.InventoryWidget()
-        self.cart = QtWidgets.QWidget()
+        self.cart = CartWidget()
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.tabBar().setExpanding(True)

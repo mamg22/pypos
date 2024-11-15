@@ -716,6 +716,8 @@ class InventoryWidget(QtWidgets.QWidget):
         self.product_actions.deleted.connect(self.product_table.refresh_table)
         self.product_actions.edit_requested.connect(self.edit)
 
+        self.toggle_bottom(None)
+
     @QtCore.Slot(object)
     def toggle_bottom(self, product_id: int | None) -> None:
         if product_id is not None:
