@@ -425,9 +425,8 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             )
             inventory_value = purchase_value * quantity
             inventory_sell_value = sell_value * quantity
-            expected_profit = (
-                adjust_value(purchase_currency, sell_currency, inventory_value)
-                - inventory_sell_value
+            expected_profit = inventory_sell_value - adjust_value(
+                purchase_currency, sell_currency, inventory_value
             )
 
             self.name_label.setText(f"{name}")
