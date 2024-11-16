@@ -249,7 +249,9 @@ class ProductInfoDialog(QtWidgets.QDialog):
             return
 
         if is_update:
-            query.prepare("UPDATE Inventory SET quantity = :quantity WHERE id = :id")
+            query.prepare(
+                "UPDATE Inventory SET quantity = :quantity WHERE product = :id"
+            )
         else:
             self.product_id = query.lastInsertId()
             query.prepare(
