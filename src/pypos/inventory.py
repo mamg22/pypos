@@ -70,7 +70,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
         purchase_value = :purchase_value,
         margin = :margin,
         sell_currency = :sell_currency,
-        sell_value = :sell_value
+        sell_value = :sell_value,
+        last_update = unixepoch()
     WHERE rowid = :id
     """
 
