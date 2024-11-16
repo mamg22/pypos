@@ -5,6 +5,7 @@ from decimal import Decimal, DivisionByZero
 
 from PySide6 import QtCore, QtWidgets, QtSql, QtGui
 from PySide6.QtCore import Qt
+from unidecode import unidecode
 
 from .common import DecimalSpinBox, MAX_SAFE_DOUBLE, adjust_value
 
@@ -52,27 +53,30 @@ class ProductInfoDialog(QtWidgets.QDialog):
     product_id: int | None
 
     INSERT_QUERY = """\
-    INSERT INTO Products VALUES
-        (:name, :purchase_currency, :purchase_value, :margin,
-         :sell_currency, :sell_value, unixepoch())
+    INSERT INTO Products(name, name_simplified, purchase_currency, purchase_value, margin,
+         sell_currency, sell_value)
+        VALUES
+        (:name, :name_simplified, :purchase_currency, :purchase_value, :margin,
+         :sell_currency, :sell_value)
     """
     LOAD_QUERY = """\
     SELECT name, purchase_currency, purchase_value, margin, sell_currency, sell_value, quantity
     FROM Products p
     INNER JOIN Inventory i
-        ON p.rowid = i.product
-    WHERE p.rowid = :id
+        ON p.id = i.product
+    WHERE p.id = :id
     """
     UPDATE_QUERY = """\
     UPDATE Products SET
         name = :name,
+        name_simplified = :name_simplified,
         purchase_currency = :purchase_currency,
         purchase_value = :purchase_value,
         margin = :margin,
         sell_currency = :sell_currency,
         sell_value = :sell_value,
         last_update = unixepoch()
-    WHERE rowid = :id
+    WHERE id = :id
     """
 
     def __init__(self, product_id: int | None = None) -> None:
@@ -214,6 +218,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         quantity = self.quantity.value()
 
         is_update = self.product_id is not None
+        name_simplified = unidecode(name).lower()
 
         db = QtSql.QSqlDatabase.database()
         db.transaction()
@@ -228,6 +233,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         query.prepare(query_string)
 
         query.bindValue(":name", name)
+        query.bindValue(":name_simplified", name_simplified)
         query.bindValue(":purchase_currency", purchase_currency)
         query.bindValue(":purchase_value", int(purchase_value * 100))
         query.bindValue(":margin", int(margin * 100))
@@ -243,10 +249,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
             return
 
         if is_update:
-            query.prepare("UPDATE Inventory SET quantity = :quantity WHERE rowid = :id")
+            query.prepare("UPDATE Inventory SET quantity = :quantity WHERE id = :id")
         else:
             self.product_id = query.lastInsertId()
-            query.prepare("INSERT INTO Inventory VALUES (:id, :quantity)")
+            query.prepare(
+                "INSERT INTO Inventory(product, quantity) VALUES (:id, :quantity)"
+            )
 
         query.bindValue(":id", self.product_id)
         query.bindValue(":quantity", quantity)
@@ -334,8 +342,8 @@ class ProductPreviewWidget(QtWidgets.QFrame):
                sell_value, last_update, quantity
         FROM Products p
             INNER JOIN Inventory i
-            ON p.rowid = i.product
-        WHERE p.rowid = :id"""
+            ON p.id = i.product
+        WHERE p.id = :id"""
 
     def __init__(self) -> None:
         super().__init__()
@@ -525,7 +533,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 
             if confirm == StandardButton.Yes:
                 query = QtSql.QSqlQuery()
-                query.prepare("DELETE FROM Products WHERE rowid = :id")
+                query.prepare("DELETE FROM Products WHERE id = :id")
                 query.bindValue(":id", self.product_id)
 
                 if not query.exec():
@@ -539,17 +547,17 @@ class ProductTable(QtWidgets.QTableWidget):
     selected = QtCore.Signal(object)
 
     TABLE_QUERY = """
-    SELECT p.rowid, name, quantity, sell_currency, sell_value
+    SELECT p.id, name, quantity, sell_currency, sell_value
     FROM Products p
         INNER JOIN Inventory i
-        ON p.rowid = i.product
+        ON p.id = i.product
     {where_clause}
     ORDER BY
         CASE
-            WHEN like(:name || '%', name) THEN 1
-            WHEN like(concat('% ', :name, '%'), name) THEN 2
+            WHEN like(:name_simplified || '%', name_simplified) THEN 1
+            WHEN like(concat('% ', :name_simplified, '%'), name_simplified) THEN 2
             ELSE 3
-        END, name
+        END, name_simplified
     """
 
     def __init__(self, parent=None) -> None:
@@ -588,7 +596,9 @@ class ProductTable(QtWidgets.QTableWidget):
     @QtCore.Slot(type(None))
     def refresh_table(self):
         where_clause = (
-            " WHERE name LIKE concat('%', :name, '%')" if self.query is not None else ""
+            " WHERE name_simplified LIKE concat('%', :name_simplified, '%')"
+            if self.query is not None
+            else ""
         )
 
         db = QtSql.QSqlDatabase.database()
@@ -596,7 +606,8 @@ class ProductTable(QtWidgets.QTableWidget):
 
         product_query.prepare(self.TABLE_QUERY.format(where_clause=where_clause))
         if self.query is not None:
-            product_query.bindValue(":name", self.query)
+            query = unidecode(self.query).lower()
+            product_query.bindValue(":name_simplified", query)
 
         if not product_query.exec():
             print(product_query.lastError())

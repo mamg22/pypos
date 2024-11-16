@@ -70,29 +70,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 SCHEMA: list[str] = [
+    "PRAGMA foreign_keys = on;",
     """\
 CREATE TABLE IF NOT EXISTS Products (
-    name TEXT NOT NULL,
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL UNIQUE,
+    name_simplified TEXT NOT NULL UNIQUE,
     purchase_currency TEXT NOT NULL,
     purchase_value INTEGER NOT NULL,
     margin INTEGER NOT NULL,
     sell_currency INTEGER NOT NULL,
     sell_value INTEGER NOT NULL,
-    last_update INTEGER NOT NULL
+    last_update INTEGER NOT NULL DEFAULT (unixepoch())
 );
 """,
     """\
 CREATE TABLE IF NOT EXISTS Inventory (
-    product INTEGER NOT NULL,
-    quantity INTEGER NOT NULL
+    product INTEGER NOT NULL PRIMARY KEY,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (product) REFERENCES Products(id)
+        ON DELETE CASCADE
 );
 """,
     """\
-CREATE TRIGGER IF NOT EXISTS inventory_delete_from_products
-AFTER DELETE ON Products
-BEGIN
-    DELETE FROM Inventory WHERE product = old.rowid;
-END;
+CREATE TABLE IF NOT EXISTS Cart (
+    product INTEGER NOT NULL PRIMARY KEY,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (product) REFERENCES Product(id)
+        ON DELETE RESTRICT
+);
 """,
 ]
 
