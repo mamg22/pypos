@@ -301,6 +301,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
             self.margin.setValue(0)
             self.sell_currency.setCurrentIndex(0)
             self.sell_value.setValue(0)
+            self.quantity.setValue(0)
 
     @QtCore.Slot()
     def update_purchase_value(self) -> None:
