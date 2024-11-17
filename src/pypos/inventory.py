@@ -472,6 +472,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 
     deleted = QtCore.Signal()
     edit_requested = QtCore.Signal(int)
+    cart_item = QtCore.Signal(int, int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -508,8 +509,58 @@ class InventoryProductActions(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def product_carted(self) -> None:
-        if self.product_id is not None:
-            print("CART", self.product_id)
+        if self.product_id is None:
+            return
+
+        query = QtSql.QSqlQuery()
+        query.prepare("""\
+        SELECT name, i.quantity as available, coalesce(c.quantity, 0) as in_cart
+        FROM Products p
+            INNER JOIN Inventory i
+            ON i.product = p.id
+            LEFT JOIN Cart c
+            ON c.product = p.id
+        WHERE p.id = :id
+        """)
+
+        query.bindValue(":id", self.product_id)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+        query.next()
+
+        name = query.value(0)
+        available = query.value(1)
+        in_cart = query.value(2)
+
+        if available <= 0:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "No hay existencias",
+                f'No hay existencias de "{name}" para agregar al carrito.',
+            )
+            return
+
+        quantity, ok = QtWidgets.QInputDialog.getInt(
+            self, "Agregar al carrito", f"Unidades de {name}:", in_cart, 1, available
+        )
+
+        if ok:
+            query.prepare("""\
+            INSERT INTO Cart(product, quantity) VALUES (:product, :quantity)
+            ON CONFLICT(product)
+                DO UPDATE SET quantity = :quantity
+            """)
+
+            query.bindValue(":product", self.product_id)
+            query.bindValue(":quantity", quantity)
+
+            if not query.exec():
+                print(query.lastError())
+                return
+
+            self.cart_item.emit(self.product_id, quantity)
 
     @QtCore.Slot()
     def product_quantity(self) -> None:
@@ -690,6 +741,8 @@ class ProductTable(QtWidgets.QTableWidget):
 
 
 class InventoryWidget(QtWidgets.QWidget):
+    cart_item = QtCore.Signal(int, int)
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -728,6 +781,7 @@ class InventoryWidget(QtWidgets.QWidget):
 
         self.product_actions.deleted.connect(self.product_table.refresh_table)
         self.product_actions.edit_requested.connect(self.edit)
+        self.product_actions.cart_item.connect(self.cart_item)
 
         self.toggle_bottom(None)
 

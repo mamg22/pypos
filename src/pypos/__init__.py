@@ -43,6 +43,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menuBar().addMenu(app_menu)
         self.menuBar().addMenu(options_menu)
 
+        self.inventory.cart_item.connect(self.cart.refresh)
+
     @QtCore.Slot()
     def update_rate(self) -> None:
         settings = QtCore.QSettings()

@@ -106,9 +106,19 @@ class CartTotals(QtWidgets.QWidget):
         total_font.setPointSize(total_font.pointSize() * 3)
         self.total_dolar.setFont(total_font)
 
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("Total:"))
+        layout.addWidget(self.total_dolar)
+
+        self.setLayout(layout)
+
+        self.refresh()
+
+    @QtCore.Slot()
+    def refresh(self) -> None:
         query = QtSql.QSqlQuery()
         query.prepare("""\
-        SELECT sum(p.sell_value * c.quantity)
+        SELECT coalesce(sum(p.sell_value * c.quantity), 0)
         FROM Cart c
             INNER JOIN Products p
             ON c.product = p.id
@@ -123,24 +133,24 @@ class CartTotals(QtWidgets.QWidget):
 
         self.total_dolar.setText(f"Bs {total:.2f}")
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(QtWidgets.QLabel("Total:"))
-        layout.addWidget(self.total_dolar)
-
-        self.setLayout(layout)
-
 
 class CartWidget(QtWidgets.QWidget):
+    refresh = QtCore.Signal()
+
     def __init__(self) -> None:
         super().__init__()
 
         self.cart_table = CartTable()
+        self.cart_totals = CartTotals()
 
         main_layout = QtWidgets.QGridLayout()
 
         main_layout.addWidget(self.cart_table, 0, 0, 1, 2)
-        main_layout.addWidget(CartTotals(), 1, 1, 1, 1)
+        main_layout.addWidget(self.cart_totals, 1, 1, 1, 1)
 
         main_layout.setColumnStretch(0, 1)
 
         self.setLayout(main_layout)
+
+        self.refresh.connect(self.cart_table.refresh)
+        self.refresh.connect(self.cart_totals.refresh)
