@@ -110,6 +110,8 @@ class CartTotals(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel("Total:"))
         layout.addWidget(self.total_dolar)
 
+        layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+
         self.setLayout(layout)
 
         self.refresh()
@@ -134,6 +136,41 @@ class CartTotals(QtWidgets.QWidget):
         self.total_dolar.setText(f"Bs {total:.2f}")
 
 
+class CartActions(QtWidgets.QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+
+        item_actions = QtWidgets.QGroupBox("Producto seleccionado")
+
+        self.units_button = QtWidgets.QPushButton("Unidades...")
+        self.view_in_inventoty_button = QtWidgets.QPushButton("Ver en inventario")
+        self.delete_button = QtWidgets.QPushButton("Eliminar del carrito")
+
+        item_layout = QtWidgets.QVBoxLayout()
+        item_layout.addWidget(self.units_button)
+        item_layout.addWidget(self.view_in_inventoty_button)
+        item_layout.addWidget(self.delete_button)
+
+        item_actions.setLayout(item_layout)
+
+        cart_actions = QtWidgets.QGroupBox("Carrito")
+
+        self.accept_button = QtWidgets.QPushButton("Completar venta")
+        self.discard_button = QtWidgets.QPushButton("Descartar todo")
+
+        cart_layout = QtWidgets.QVBoxLayout()
+        cart_layout.addWidget(self.accept_button)
+        cart_layout.addWidget(self.discard_button)
+
+        cart_actions.setLayout(cart_layout)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(item_actions)
+        layout.addWidget(cart_actions)
+
+        self.setLayout(layout)
+
+
 class CartWidget(QtWidgets.QWidget):
     refresh = QtCore.Signal()
 
@@ -142,13 +179,15 @@ class CartWidget(QtWidgets.QWidget):
 
         self.cart_table = CartTable()
         self.cart_totals = CartTotals()
+        self.cart_actions = CartActions()
 
         main_layout = QtWidgets.QGridLayout()
 
         main_layout.addWidget(self.cart_table, 0, 0, 1, 2)
         main_layout.addWidget(self.cart_totals, 1, 1, 1, 1)
+        main_layout.addWidget(self.cart_actions, 1, 0, 1, 1)
 
-        main_layout.setColumnStretch(0, 1)
+        main_layout.setColumnStretch(1, 1)
 
         self.setLayout(main_layout)
 
