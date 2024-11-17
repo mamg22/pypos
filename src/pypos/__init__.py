@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS Inventory (
 CREATE TABLE IF NOT EXISTS Cart (
     product INTEGER NOT NULL PRIMARY KEY,
     quantity INTEGER NOT NULL,
-    FOREIGN KEY (product) REFERENCES Product(id)
+    FOREIGN KEY (product) REFERENCES Products(id)
         ON DELETE RESTRICT
 );
 """,
