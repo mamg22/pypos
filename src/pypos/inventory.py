@@ -244,7 +244,16 @@ class ProductInfoDialog(QtWidgets.QDialog):
             query.bindValue(":id", self.product_id)
 
         if not query.exec():
-            print(query.lastError())
+            # 2067 SQLITE_CONSTRAINT_UNIQUE
+            if query.lastError().nativeErrorCode() == "2067":
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Duplicado",
+                    "Ya existe un producto registrado con un nombre similar",
+                )
+            else:
+                print(query.lastError())
+
             db.rollback()
             return
 
