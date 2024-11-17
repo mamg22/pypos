@@ -222,6 +222,14 @@ class ProductInfoDialog(QtWidgets.QDialog):
         is_update = self.product_id is not None
         name_simplified = unidecode(name).lower()
 
+        if not name:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Nombre invalido",
+                "El nombre del producto está vacío.",
+            )
+            return
+
         db = QtSql.QSqlDatabase.database()
         db.transaction()
 
