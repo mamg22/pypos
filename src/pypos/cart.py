@@ -137,18 +137,34 @@ class CartTotals(QtWidgets.QWidget):
 
 
 class CartActions(QtWidgets.QWidget):
+    units = QtCore.Signal()
+    view_in_inventory = QtCore.Signal()
+    delete = QtCore.Signal()
+
+    sale_completed = QtCore.Signal()
+    sale_discarded = QtCore.Signal()
+
     def __init__(self) -> None:
         super().__init__()
 
+        self.current_id = None
+
         item_actions = QtWidgets.QGroupBox("Producto seleccionado")
+        self.item_actions = item_actions
 
         self.units_button = QtWidgets.QPushButton("Unidades...")
-        self.view_in_inventoty_button = QtWidgets.QPushButton("Ver en inventario")
+        self.view_in_inventory_button = QtWidgets.QPushButton("Ver en inventario")
         self.delete_button = QtWidgets.QPushButton("Eliminar del carrito")
+
+        self.item_action_buttons = (
+            self.units_button,
+            self.view_in_inventory_button,
+            self.delete_button,
+        )
 
         item_layout = QtWidgets.QVBoxLayout()
         item_layout.addWidget(self.units_button)
-        item_layout.addWidget(self.view_in_inventoty_button)
+        item_layout.addWidget(self.view_in_inventory_button)
         item_layout.addWidget(self.delete_button)
 
         item_actions.setLayout(item_layout)
@@ -170,9 +186,74 @@ class CartActions(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+        self.units_button.clicked.connect(self.units)
+        self.view_in_inventory_button.clicked.connect(self.view_in_inventory)
+        self.delete_button.clicked.connect(self.delete)
+        self.accept_button.clicked.connect(self.accept_sale)
+        self.discard_button.clicked.connect(self.discard_sale)
+
+        self.update_buttons()
+
+    @QtCore.Slot()
+    def update_buttons(self) -> None:
+        enable = self.current_id is not None
+
+        self.item_actions.setEnabled(enable)
+
+    @QtCore.Slot()
+    def accept_sale(self) -> None:
+        SB = QtWidgets.QMessageBox.StandardButton
+
+        confirm = QtWidgets.QMessageBox.question(
+            self, "Confirmar venta", "¿Está seguro de que desea completar esta venta?"
+        )
+
+        if confirm != SB.Yes:
+            return
+
+        query = QtSql.QSqlQuery()
+        query.prepare("""\
+        UPDATE Inventory AS i SET quantity = i.quantity - c.quantity
+        FROM Cart c
+            WHERE i.product = c.product
+        """)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+
+        if not query.exec("DELETE FROM Cart"):
+            print(query.lastError())
+            return
+
+        self.sale_completed.emit()
+
+    @QtCore.Slot()
+    def discard_sale(self) -> None:
+        SB = QtWidgets.QMessageBox.StandardButton
+
+        confirm = QtWidgets.QMessageBox.question(
+            self,
+            "Descartar venta",
+            "¿Está seguro de que desea descartar esta venta?",
+            defaultButton=SB.No,
+        )
+
+        if confirm.value != SB.Yes:
+            return
+
+        query = QtSql.QSqlQuery()
+
+        if not query.exec("DELETE FROM Cart"):
+            print(query.lastError())
+            return
+
+        self.sale_discarded.emit()
+
 
 class CartWidget(QtWidgets.QWidget):
     refresh = QtCore.Signal()
+    sale_completed = QtCore.Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -193,3 +274,8 @@ class CartWidget(QtWidgets.QWidget):
 
         self.refresh.connect(self.cart_table.refresh)
         self.refresh.connect(self.cart_totals.refresh)
+
+        self.cart_actions.sale_completed.connect(self.refresh)
+        self.cart_actions.sale_completed.connect(self.sale_completed)
+
+        self.cart_actions.sale_discarded.connect(self.refresh)

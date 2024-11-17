@@ -44,6 +44,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menuBar().addMenu(options_menu)
 
         self.inventory.cart_item.connect(self.cart.refresh)
+        self.cart.sale_completed.connect(self.inventory.refresh)
 
     @QtCore.Slot()
     def update_rate(self) -> None:
@@ -80,7 +81,6 @@ CREATE TABLE IF NOT EXISTS Products (
     name_simplified TEXT NOT NULL UNIQUE,
     purchase_currency TEXT NOT NULL,
     purchase_value INTEGER NOT NULL,
-    margin INTEGER NOT NULL,
     sell_currency INTEGER NOT NULL,
     sell_value INTEGER NOT NULL,
     last_update INTEGER NOT NULL DEFAULT (unixepoch())

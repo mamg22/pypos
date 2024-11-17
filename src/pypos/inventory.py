@@ -821,3 +821,4 @@ class InventoryWidget(QtWidgets.QWidget):
         current_id = self.preview.current_id
         self.product_table.refresh_table()
         self.product_table.focus_product(current_id)
+        self.preview.refresh()
