@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal, DivisionByZero
+from decimal import Decimal
 
 from PySide6 import QtCore, QtWidgets, QtSql, QtGui
 from PySide6.QtCore import Qt
 from unidecode import unidecode
 
-from .common import DecimalSpinBox, MAX_SAFE_DOUBLE, adjust_value
+from .common import DecimalSpinBox, MAX_SAFE_DOUBLE, adjust_value, calculate_margin
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -53,14 +53,14 @@ class ProductInfoDialog(QtWidgets.QDialog):
     product_id: int | None
 
     INSERT_QUERY = """\
-    INSERT INTO Products(name, name_simplified, purchase_currency, purchase_value, margin,
+    INSERT INTO Products(name, name_simplified, purchase_currency, purchase_value,
          sell_currency, sell_value)
         VALUES
-        (:name, :name_simplified, :purchase_currency, :purchase_value, :margin,
+        (:name, :name_simplified, :purchase_currency, :purchase_value,
          :sell_currency, :sell_value)
     """
     LOAD_QUERY = """\
-    SELECT name, purchase_currency, purchase_value, margin, sell_currency, sell_value, quantity
+    SELECT name, purchase_currency, purchase_value, sell_currency, sell_value, quantity
     FROM Products p
     INNER JOIN Inventory i
         ON p.id = i.product
@@ -72,7 +72,6 @@ class ProductInfoDialog(QtWidgets.QDialog):
         name_simplified = :name_simplified,
         purchase_currency = :purchase_currency,
         purchase_value = :purchase_value,
-        margin = :margin,
         sell_currency = :sell_currency,
         sell_value = :sell_value,
         last_update = unixepoch()
@@ -183,10 +182,14 @@ class ProductInfoDialog(QtWidgets.QDialog):
             name = query.value(0)
             purchase_currency = query.value(1)
             purchase_value = Decimal(query.value(2)) / 100
-            margin = Decimal(query.value(3)) / 100
-            sell_currency = query.value(4)
-            sell_value = Decimal(query.value(5)) / 100
-            quantity = query.value(6)
+            sell_currency = query.value(3)
+            sell_value = Decimal(query.value(4)) / 100
+            quantity = query.value(5)
+
+            margin = calculate_margin(
+                sell_value,
+                adjust_value(purchase_currency, sell_currency, purchase_value),
+            )
 
             self.name.setText(name)
 
@@ -212,7 +215,6 @@ class ProductInfoDialog(QtWidgets.QDialog):
         name = self.name.text().strip()
         purchase_currency = self.purchase_currency.currentData()
         purchase_value = self.purchase_value.decimal_value()
-        margin = self.margin.decimal_value()
         sell_currency = self.sell_currency.currentData()
         sell_value = self.sell_value.decimal_value()
         quantity = self.quantity.value()
@@ -236,7 +238,6 @@ class ProductInfoDialog(QtWidgets.QDialog):
         query.bindValue(":name_simplified", name_simplified)
         query.bindValue(":purchase_currency", purchase_currency)
         query.bindValue(":purchase_value", int(purchase_value * 100))
-        query.bindValue(":margin", int(margin * 100))
         query.bindValue(":sell_currency", sell_currency)
         query.bindValue(":sell_value", int(sell_value * 100))
 
@@ -336,10 +337,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         )
         sell_value = adjust_value(self.current_sell_currency, sell_currency, sell_value)
 
-        try:
-            margin = (sell_value / purchase_value - Decimal(1)) * 100
-        except DivisionByZero:
-            margin = Decimal(0)
+        margin = calculate_margin(sell_value, purchase_value)
 
         with QtCore.QSignalBlocker(self.margin):
             self.margin.setValue(float(margin))
@@ -349,7 +347,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
     current_id: int | None
 
     PRODUCT_QUERY = """\
-        SELECT name, purchase_currency, purchase_value, margin, sell_currency,
+        SELECT name, purchase_currency, purchase_value, sell_currency,
                sell_value, last_update, quantity
         FROM Products p
             INNER JOIN Inventory i
@@ -428,7 +426,6 @@ class ProductPreviewWidget(QtWidgets.QFrame):
                 name,
                 purchase_currency,
                 purchase_value,
-                margin,
                 sell_currency,
                 sell_value,
                 last_update,
@@ -436,10 +433,13 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             ) = (product_query.value(i) for i in range(product_query.record().count()))
 
             purchase_value = Decimal(purchase_value) / 100
-            margin = Decimal(margin) / 100
             sell_value = Decimal(sell_value) / 100
             last_update = datetime.fromtimestamp(last_update)
 
+            margin = calculate_margin(
+                sell_value,
+                adjust_value(purchase_currency, sell_currency, purchase_value),
+            )
             profit = sell_value - adjust_value(
                 purchase_currency, sell_currency, purchase_value
             )

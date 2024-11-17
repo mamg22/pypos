@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 from sys import float_info
 from typing import cast
 
@@ -43,3 +43,11 @@ def adjust_value(source_currency: str, target_currency: str, value: Decimal) -> 
                     source_currency, target_currency
                 )
             )
+
+
+def calculate_margin(sell_value: Decimal, purchase_value: Decimal) -> Decimal:
+    try:
+        return (sell_value / purchase_value - 1) * 100
+    except DecimalException:
+        # This will handle extraneous situations such as x/0, 0/0, etc.
+        return Decimal(0)
