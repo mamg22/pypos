@@ -512,10 +512,10 @@ class InventoryProductActions(QtWidgets.QWidget):
     @QtCore.Slot(int)
     def set_product(self, product_id: int | None) -> None:
         self.product_id = product_id
-        if product_id is not None:
-            self.show()
-        else:
-            self.hide()
+
+        enabled = product_id is not None
+        self.setVisible(enabled)
+        self.setEnabled(enabled)
 
     @QtCore.Slot()
     def product_carted(self) -> None:
