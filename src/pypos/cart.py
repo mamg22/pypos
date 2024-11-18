@@ -113,6 +113,22 @@ class CartTable(QtWidgets.QTableWidget):
         except IndexError:
             self.selected.emit(None)
 
+    @QtCore.Slot(int)
+    def focus_item(self, product_id: int) -> None:
+        model = self.model()
+
+        if model.hasIndex(0, 0):
+            found = model.match(
+                model.index(0, 0),
+                Qt.ItemDataRole.UserRole,
+                product_id,
+                flags=Qt.MatchFlag.MatchExactly,
+            )
+            if found:
+                idx = found[0]
+                self.selectRow(idx.row())
+                self.scrollTo(idx)
+
 
 class CartTotals(QtWidgets.QWidget):
     def __init__(self) -> None:
@@ -155,11 +171,10 @@ class CartTotals(QtWidgets.QWidget):
 
 
 class CartActions(QtWidgets.QWidget):
-    units = QtCore.Signal()
-
     sale_completed = QtCore.Signal()
     sale_discarded = QtCore.Signal()
     item_deleted = QtCore.Signal(int)
+    item_updated = QtCore.Signal(int)
     view_in_inventory = QtCore.Signal(int)
 
     def __init__(self) -> None:
@@ -292,6 +307,51 @@ class CartActions(QtWidgets.QWidget):
         self.set_current_id(None)
 
     @QtCore.Slot()
+    def units(self) -> None:
+        if self.current_id is None:
+            return
+
+        query = QtSql.QSqlQuery()
+        query.prepare("""\
+        SELECT p.name, i.quantity as available, coalesce(c.quantity, 0) as in_cart
+        FROM Cart c
+            INNER JOIN Products p
+            ON c.product = p.id
+            INNER JOIN Inventory i
+            USING (product)
+        WHERE c.product = :id
+        """)
+
+        query.bindValue(":id", self.current_id)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+        query.next()
+
+        name = query.value(0)
+        available = query.value(1)
+        in_cart = query.value(2)
+
+        quantity, ok = QtWidgets.QInputDialog.getInt(
+            self, "Cambiar unidades", f"Unidades de {name}:", in_cart, 1, available
+        )
+
+        if ok:
+            query.prepare(
+                "UPDATE Cart SET quantity = :quantity WHERE product = :product"
+            )
+
+            query.bindValue(":product", self.current_id)
+            query.bindValue(":quantity", quantity)
+
+            if not query.exec():
+                print(query.lastError())
+                return
+
+            self.item_updated.emit(self.current_id)
+
+    @QtCore.Slot()
     def view_in_inventory_handler(self) -> None:
         if self.current_id is not None:
             self.view_in_inventory.emit(self.current_id)
@@ -328,6 +388,8 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.sale_discarded.connect(self.refresh)
 
         self.cart_actions.item_deleted.connect(self.refresh)
+        self.cart_actions.item_updated.connect(self.refresh)
+        self.cart_actions.item_updated.connect(self.cart_table.focus_item)
 
         self.cart_actions.view_in_inventory.connect(self.view_in_inventory)
 
