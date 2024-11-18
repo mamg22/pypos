@@ -5,6 +5,8 @@ from PySide6.QtCore import Qt
 
 
 class CartTable(QtWidgets.QTableWidget):
+    selected = QtCore.Signal(object)
+
     CART_QUERY = """\
     SELECT p.id, name, quantity, sell_currency, sell_value
     FROM Cart c
@@ -33,6 +35,8 @@ class CartTable(QtWidgets.QTableWidget):
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
         self.verticalHeader().hide()
+
+        self.itemSelectionChanged.connect(self.row_selected)
 
         self.refresh()
 
@@ -94,6 +98,17 @@ class CartTable(QtWidgets.QTableWidget):
                 (name_item, unit_item, quantity_item, total_item)
             ):
                 self.setItem(row_num, idx, item)
+
+        self.clearSelection()
+        self.row_selected()
+
+    @QtCore.Slot()
+    def row_selected(self) -> None:
+        try:
+            item_id = self.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
+            self.selected.emit(item_id)
+        except IndexError:
+            self.selected.emit(None)
 
 
 class CartTotals(QtWidgets.QWidget):
@@ -192,11 +207,12 @@ class CartActions(QtWidgets.QWidget):
         self.accept_button.clicked.connect(self.accept_sale)
         self.discard_button.clicked.connect(self.discard_sale)
 
-        self.update_buttons()
+        self.set_current_id(None)
 
-    @QtCore.Slot()
-    def update_buttons(self) -> None:
-        enable = self.current_id is not None
+    @QtCore.Slot(object)
+    def set_current_id(self, product_id: int | None) -> None:
+        self.current_id = product_id
+        enable = product_id is not None
 
         self.item_actions.setEnabled(enable)
 
@@ -279,3 +295,5 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.sale_completed.connect(self.sale_completed)
 
         self.cart_actions.sale_discarded.connect(self.refresh)
+
+        self.cart_table.selected.connect(self.cart_actions.set_current_id)
