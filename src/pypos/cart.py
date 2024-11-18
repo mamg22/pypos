@@ -3,6 +3,7 @@ from decimal import Decimal
 from PySide6 import QtCore, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
+from .common import adjust_value
 
 SB = QtWidgets.QMessageBox.StandardButton
 
@@ -153,7 +154,7 @@ class CartTotals(QtWidgets.QWidget):
     def refresh(self) -> None:
         query = QtSql.QSqlQuery()
         query.prepare("""\
-        SELECT coalesce(sum(p.sell_value * c.quantity), 0)
+        SELECT sell_currency, sell_value, quantity
         FROM Cart c
             INNER JOIN Products p
             ON c.product = p.id
@@ -163,10 +164,18 @@ class CartTotals(QtWidgets.QWidget):
             print(query.lastError())
             raise ValueError()
 
-        query.next()
-        total = Decimal(query.value(0)) / 100
+        total_VED = Decimal(0)
+        total_USD = Decimal(0)
 
-        self.total_dolar.setText(f"Bs {total:.2f}")
+        while query.next():
+            sell_currency = query.value(0)
+            sell_value = Decimal(query.value(1)) / 100
+            quantity = query.value(2)
+
+            total_VED += adjust_value(sell_currency, "VED", sell_value * quantity)
+            total_USD += adjust_value(sell_currency, "USD", sell_value * quantity)
+
+        self.total_dolar.setText(f"Bs {total_VED:.2f}\n$ {total_USD:.2f}")
 
 
 class CartActions(QtWidgets.QWidget):
