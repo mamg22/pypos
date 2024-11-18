@@ -28,25 +28,17 @@ class InventoryTopBar(QtWidgets.QWidget):
         new_button = QtWidgets.QPushButton("Nuevo")
         self.new_button = new_button
 
-        new_button.clicked.connect(self.emit_new)
+        new_button.clicked.connect(self.new_product)
 
         search_bar = QtWidgets.QLineEdit()
         self.search_bar = search_bar
-        search_bar.textEdited.connect(self.search_edit_finished)
+        search_bar.textEdited.connect(self.search_submitted)
         search_bar.setClearButtonEnabled(True)
 
         layout.addWidget(new_button)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel("Buscar:"))
         layout.addWidget(search_bar)
-
-    @QtCore.Slot()
-    def emit_new(self) -> None:
-        self.new_product.emit()
-
-    @QtCore.Slot()
-    def search_edit_finished(self, query: str):
-        self.search_submitted.emit(query)
 
 
 class ProductInfoDialog(QtWidgets.QDialog):
