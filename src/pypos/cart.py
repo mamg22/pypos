@@ -4,6 +4,9 @@ from PySide6 import QtCore, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
 
+SB = QtWidgets.QMessageBox.StandardButton
+
+
 class CartTable(QtWidgets.QTableWidget):
     selected = QtCore.Signal(object)
 
@@ -154,10 +157,10 @@ class CartTotals(QtWidgets.QWidget):
 class CartActions(QtWidgets.QWidget):
     units = QtCore.Signal()
     view_in_inventory = QtCore.Signal()
-    delete = QtCore.Signal()
 
     sale_completed = QtCore.Signal()
     sale_discarded = QtCore.Signal()
+    item_deleted = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -218,8 +221,6 @@ class CartActions(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def accept_sale(self) -> None:
-        SB = QtWidgets.QMessageBox.StandardButton
-
         confirm = QtWidgets.QMessageBox.question(
             self, "Confirmar venta", "¿Está seguro de que desea completar esta venta?"
         )
@@ -246,8 +247,6 @@ class CartActions(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def discard_sale(self) -> None:
-        SB = QtWidgets.QMessageBox.StandardButton
-
         confirm = QtWidgets.QMessageBox.question(
             self,
             "Descartar venta",
@@ -255,7 +254,7 @@ class CartActions(QtWidgets.QWidget):
             defaultButton=SB.No,
         )
 
-        if confirm.value != SB.Yes:
+        if confirm != SB.Yes:
             return
 
         query = QtSql.QSqlQuery()
@@ -265,6 +264,32 @@ class CartActions(QtWidgets.QWidget):
             return
 
         self.sale_discarded.emit()
+
+    @QtCore.Slot()
+    def delete(self) -> None:
+        if self.current_id is None:
+            return
+
+        confirm = QtWidgets.QMessageBox.question(
+            self,
+            "Eliminar producto",
+            "¿Está seguro de que desea eliminar este producto de la venta actual?",
+            defaultButton=SB.Yes,
+        )
+
+        if confirm != SB.Yes:
+            return
+
+        query = QtSql.QSqlQuery()
+        query.prepare("DELETE FROM Cart WHERE product = :product")
+        query.bindValue(":product", self.current_id)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+
+        self.item_deleted.emit(self.current_id)
+        self.set_current_id(None)
 
 
 class CartWidget(QtWidgets.QWidget):
@@ -295,5 +320,7 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.sale_completed.connect(self.sale_completed)
 
         self.cart_actions.sale_discarded.connect(self.refresh)
+
+        self.cart_actions.item_deleted.connect(self.refresh)
 
         self.cart_table.selected.connect(self.cart_actions.set_current_id)
