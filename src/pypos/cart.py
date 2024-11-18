@@ -156,11 +156,11 @@ class CartTotals(QtWidgets.QWidget):
 
 class CartActions(QtWidgets.QWidget):
     units = QtCore.Signal()
-    view_in_inventory = QtCore.Signal()
 
     sale_completed = QtCore.Signal()
     sale_discarded = QtCore.Signal()
     item_deleted = QtCore.Signal(int)
+    view_in_inventory = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -205,7 +205,7 @@ class CartActions(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self.units_button.clicked.connect(self.units)
-        self.view_in_inventory_button.clicked.connect(self.view_in_inventory)
+        self.view_in_inventory_button.clicked.connect(self.view_in_inventory_handler)
         self.delete_button.clicked.connect(self.delete)
         self.accept_button.clicked.connect(self.accept_sale)
         self.discard_button.clicked.connect(self.discard_sale)
@@ -291,10 +291,16 @@ class CartActions(QtWidgets.QWidget):
         self.item_deleted.emit(self.current_id)
         self.set_current_id(None)
 
+    @QtCore.Slot()
+    def view_in_inventory_handler(self) -> None:
+        if self.current_id is not None:
+            self.view_in_inventory.emit(self.current_id)
+
 
 class CartWidget(QtWidgets.QWidget):
     refresh = QtCore.Signal()
     sale_completed = QtCore.Signal()
+    view_in_inventory = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -322,5 +328,7 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.sale_discarded.connect(self.refresh)
 
         self.cart_actions.item_deleted.connect(self.refresh)
+
+        self.cart_actions.view_in_inventory.connect(self.view_in_inventory)
 
         self.cart_table.selected.connect(self.cart_actions.set_current_id)

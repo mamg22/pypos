@@ -45,6 +45,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.inventory.cart_item.connect(self.cart.refresh)
         self.cart.sale_completed.connect(self.inventory.refresh)
+        self.cart.view_in_inventory.connect(self.focus_inventory_item)
 
     @QtCore.Slot()
     def update_rate(self) -> None:
@@ -66,6 +67,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if result == rate_dialog.DialogCode.Accepted:
             self.update_rate()
             self.inventory.refresh()
+
+    @QtCore.Slot(int)
+    def focus_inventory_item(self, product_id: int) -> None:
+        self.inventory.product_table.set_query(None)
+        self.inventory.product_table.focus_product(product_id)
+        self.tabs.setCurrentWidget(self.inventory)
 
     @QtCore.Slot()
     def bye(self):
