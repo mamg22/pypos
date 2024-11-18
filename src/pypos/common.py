@@ -7,6 +7,13 @@ from PySide6 import QtCore, QtWidgets, QtGui, QtSql
 LOCALE_DECIMAL_SEP = QtCore.QLocale().decimalPoint()
 LOCALE_GROUP_SEP = QtCore.QLocale().groupSeparator()
 
+MAX_SAFE_DOUBLE = 10 ** (float_info.dig - 3)
+
+CURRENCY_SYMBOL = {
+    "USD": "$",
+    "VED": "Bs",
+}
+
 
 class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
     def validate(self, input: str, pos: int) -> object:
@@ -20,9 +27,6 @@ class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
 
     def _fixup_decimal(self, value: str) -> str:
         return value.replace(LOCALE_DECIMAL_SEP, ".", 1)
-
-
-MAX_SAFE_DOUBLE = 10 ** (float_info.dig - 3)
 
 
 def adjust_value(source_currency: str, target_currency: str, value: Decimal) -> Decimal:

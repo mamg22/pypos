@@ -13,6 +13,7 @@ from .common import (
     adjust_value,
     calculate_margin,
     is_product_in_cart,
+    CURRENCY_SYMBOL,
 )
 
 
@@ -653,7 +654,7 @@ class ProductTable(QtWidgets.QTableWidget):
         super().__init__(0, 4, parent)
 
         self.setColumnCount(4)
-        self.setHorizontalHeaderLabels(["Item", "Existencias", "$", "Bs"])
+        self.setHorizontalHeaderLabels(["Item", "Existencias", "Precio", "Equivalente"])
         self.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
@@ -732,17 +733,25 @@ class ProductTable(QtWidgets.QTableWidget):
             quantity_item.setText(str(quantity))
             quantity_item.setTextAlignment(number_align)
 
-            dolar_value = adjust_value(sell_currency, "USD", sell_value)
-            dolar_item = base_item.clone()
-            dolar_item.setText(f"{dolar_value:.2f}")
-            dolar_item.setTextAlignment(number_align)
+            sell_value_item = base_item.clone()
+            sell_value_item.setText(
+                f"{CURRENCY_SYMBOL[sell_currency]} {sell_value:.2f}"
+            )
+            sell_value_item.setTextAlignment(number_align)
 
-            bs_value = adjust_value(sell_currency, "VED", sell_value)
-            bs_item = base_item.clone()
-            bs_item.setText(f"{bs_value:.2f}")
-            bs_item.setTextAlignment(number_align)
+            equivalent_currency = "VED" if sell_currency == "USD" else "USD"
+            equivalent_value = adjust_value(
+                sell_currency, equivalent_currency, sell_value
+            )
+            equivalent_item = base_item.clone()
+            equivalent_item.setText(
+                f"{CURRENCY_SYMBOL[equivalent_currency]} {equivalent_value:.2f}"
+            )
+            equivalent_item.setTextAlignment(number_align)
 
-            for idx, item in enumerate((name_item, quantity_item, dolar_item, bs_item)):
+            for idx, item in enumerate(
+                (name_item, quantity_item, sell_value_item, equivalent_item)
+            ):
                 self.setItem(row_num, idx, item)
 
         if n_rows > 0 and self.query:
