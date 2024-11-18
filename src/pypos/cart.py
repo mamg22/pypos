@@ -394,3 +394,7 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.view_in_inventory.connect(self.view_in_inventory)
 
         self.cart_table.selected.connect(self.cart_actions.set_current_id)
+
+    @QtCore.Slot(int)
+    def view_in_cart(self, product_id: int) -> None:
+        self.cart_table.focus_item(product_id)

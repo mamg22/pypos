@@ -2,7 +2,7 @@ from decimal import Decimal, DecimalException
 from sys import float_info
 from typing import cast
 
-from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6 import QtCore, QtWidgets, QtGui, QtSql
 
 LOCALE_DECIMAL_SEP = QtCore.QLocale().decimalPoint()
 LOCALE_GROUP_SEP = QtCore.QLocale().groupSeparator()
@@ -51,3 +51,16 @@ def calculate_margin(sell_value: Decimal, purchase_value: Decimal) -> Decimal:
     except DecimalException:
         # This will handle extraneous situations such as x/0, 0/0, etc.
         return Decimal(0)
+
+
+def is_product_in_cart(product_id: int) -> bool:
+    query = QtSql.QSqlQuery()
+    query.prepare("SELECT count(product) FROM Cart WHERE product = :product")
+    query.bindValue(":product", product_id)
+
+    if not query.exec():
+        print(query.lastError())
+        return False
+    query.next()
+
+    return query.value(0) != 0

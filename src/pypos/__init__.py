@@ -44,6 +44,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menuBar().addMenu(options_menu)
 
         self.inventory.cart_item.connect(self.cart.refresh)
+        self.inventory.view_in_cart.connect(self.cart.view_in_cart)
+        self.inventory.view_in_cart.connect(self.show_cart)
+
         self.cart.sale_completed.connect(self.inventory.refresh)
         self.cart.view_in_inventory.connect(self.focus_inventory_item)
 
@@ -73,6 +76,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.inventory.product_table.set_query(None)
         self.inventory.product_table.focus_product(product_id)
         self.tabs.setCurrentWidget(self.inventory)
+
+    @QtCore.Slot()
+    def show_cart(self) -> None:
+        self.tabs.setCurrentWidget(self.cart)
 
     @QtCore.Slot()
     def bye(self):

@@ -7,7 +7,13 @@ from PySide6 import QtCore, QtWidgets, QtSql, QtGui
 from PySide6.QtCore import Qt
 from unidecode import unidecode
 
-from .common import DecimalSpinBox, MAX_SAFE_DOUBLE, adjust_value, calculate_margin
+from .common import (
+    DecimalSpinBox,
+    MAX_SAFE_DOUBLE,
+    adjust_value,
+    calculate_margin,
+    is_product_in_cart,
+)
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -483,26 +489,30 @@ class InventoryProductActions(QtWidgets.QWidget):
     deleted = QtCore.Signal()
     edit_requested = QtCore.Signal(int)
     cart_item = QtCore.Signal(int, int)
+    view_in_cart = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QtWidgets.QHBoxLayout()
 
         self.to_cart_button = QtWidgets.QPushButton("Agregar al Carrito")
         self.quantity_button = QtWidgets.QPushButton("Existencias")
         self.edit_button = QtWidgets.QPushButton("Editar")
         self.delete_button = QtWidgets.QPushButton("Eliminar")
+        self.view_in_cart_button = QtWidgets.QPushButton("Ver en Carrito")
 
         layout.addWidget(self.to_cart_button)
         layout.addWidget(self.quantity_button)
         layout.addWidget(self.edit_button)
         layout.addWidget(self.delete_button)
+        layout.addWidget(self.view_in_cart_button)
 
         self.to_cart_button.clicked.connect(self.product_carted)
         self.quantity_button.clicked.connect(self.product_quantity)
         self.edit_button.clicked.connect(self.product_edit)
         self.delete_button.clicked.connect(self.product_delete)
+        self.view_in_cart_button.clicked.connect(self.view_in_cart_handler)
 
         self.setLayout(layout)
 
@@ -516,6 +526,17 @@ class InventoryProductActions(QtWidgets.QWidget):
         enabled = product_id is not None
         self.setVisible(enabled)
         self.setEnabled(enabled)
+
+        if self.product_id is None:
+            return
+
+        in_cart = is_product_in_cart(self.product_id)
+
+        self.to_cart_button.setEnabled(not in_cart)
+        self.quantity_button.setEnabled(not in_cart)
+        self.edit_button.setEnabled(not in_cart)
+        self.delete_button.setEnabled(not in_cart)
+        self.view_in_cart_button.setEnabled(in_cart)
 
     @QtCore.Slot()
     def product_carted(self) -> None:
@@ -603,6 +624,11 @@ class InventoryProductActions(QtWidgets.QWidget):
                     print(query.lastError())
                 else:
                     self.deleted.emit()
+
+    @QtCore.Slot()
+    def view_in_cart_handler(self) -> None:
+        if self.product_id is not None:
+            self.view_in_cart.emit(self.product_id)
 
 
 class ProductTable(QtWidgets.QTableWidget):
@@ -752,6 +778,7 @@ class ProductTable(QtWidgets.QTableWidget):
 
 class InventoryWidget(QtWidgets.QWidget):
     cart_item = QtCore.Signal(int, int)
+    view_in_cart = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -771,19 +798,11 @@ class InventoryWidget(QtWidgets.QWidget):
         layout.addWidget(topbar)
         layout.addWidget(product_table)
 
-        bottom = QtWidgets.QHBoxLayout()
         self.preview = ProductPreviewWidget()
         self.product_actions = InventoryProductActions()
 
-        bottom.setContentsMargins(0, 0, 0, 0)
-        bottom.addWidget(self.preview, 1)
-        bottom.addWidget(self.product_actions)
-
-        bottom_widget = QtWidgets.QWidget()
-        bottom_widget.setLayout(bottom)
-
-        layout.addWidget(bottom_widget)
-        self.bottom = bottom_widget
+        layout.addWidget(self.preview, 1)
+        layout.addWidget(self.product_actions)
 
         self.product_table.selected.connect(self.preview.show_product)
         self.product_table.selected.connect(self.product_actions.set_product)
@@ -792,15 +811,15 @@ class InventoryWidget(QtWidgets.QWidget):
         self.product_actions.deleted.connect(self.product_table.refresh_table)
         self.product_actions.edit_requested.connect(self.edit)
         self.product_actions.cart_item.connect(self.cart_item)
+        self.product_actions.view_in_cart.connect(self.view_in_cart)
 
         self.toggle_bottom(None)
 
     @QtCore.Slot(object)
     def toggle_bottom(self, product_id: int | None) -> None:
-        if product_id is not None:
-            self.bottom.show()
-        else:
-            self.bottom.hide()
+        bottom_visible = product_id is not None
+        self.preview.setVisible(bottom_visible)
+        self.product_actions.setVisible(bottom_visible)
 
     @QtCore.Slot()
     def new(self):
