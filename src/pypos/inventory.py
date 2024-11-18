@@ -165,7 +165,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.purchase_currency.currentIndexChanged.connect(self.update_purchase_value)
         self.purchase_value.valueChanged.connect(self.update_sell_value)
         self.margin.valueChanged.connect(self.update_sell_value)
-        self.sell_currency.currentIndexChanged.connect(self.update_sell_value)
+        self.sell_currency.currentIndexChanged.connect(self.adjust_sell_value)
         self.sell_value.valueChanged.connect(self.update_margin)
 
     def load_existing_product(self, id: int) -> None:
@@ -313,6 +313,17 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.current_purchase_currency = purchase_currency
 
         self.purchase_value.setValue(float(value))
+
+    @QtCore.Slot()
+    def adjust_sell_value(self) -> None:
+        sell_value = self.sell_value.decimal_value()
+        sell_currency = self.sell_currency.currentData()
+
+        value = adjust_value(self.current_sell_currency, sell_currency, sell_value)
+        self.current_sell_currency = sell_currency
+
+        with QtCore.QSignalBlocker(self.sell_value):
+            self.sell_value.setValue(float(value))
 
     @QtCore.Slot()
     def update_sell_value(self) -> None:
