@@ -397,3 +397,7 @@ class CartWidget(QtWidgets.QWidget):
     @QtCore.Slot(int)
     def view_in_cart(self, product_id: int) -> None:
         self.cart_table.focus_item(product_id)
+
+    @QtCore.Slot()
+    def do_refresh(self) -> None:
+        self.refresh.emit()

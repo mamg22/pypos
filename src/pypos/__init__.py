@@ -70,6 +70,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if result == rate_dialog.DialogCode.Accepted:
             self.update_rate()
             self.inventory.refresh()
+            self.cart.do_refresh()
 
     @QtCore.Slot(int)
     def focus_inventory_item(self, product_id: int) -> None:
