@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from PySide6 import QtCore, QtSql, QtWidgets
+from PySide6 import QtCore, QtGui, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
 from .common import adjust_value, CURRENCY_SYMBOL
@@ -130,9 +130,14 @@ class CartTable(QtWidgets.QTableWidget):
                 self.scrollTo(idx)
 
 
-class CartTotals(QtWidgets.QWidget):
+class CartTotals(QtWidgets.QFrame):
     def __init__(self) -> None:
         super().__init__()
+
+        self.setLineWidth(1)
+        self.setFrameShape(type(self).Shape.StyledPanel)
+        self.setBackgroundRole(QtGui.QPalette.ColorRole.Base)
+        self.setAutoFillBackground(True)
 
         self.total_USD = QtWidgets.QLabel()
         self.total_VED = QtWidgets.QLabel()
@@ -154,12 +159,13 @@ class CartTotals(QtWidgets.QWidget):
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(QtWidgets.QLabel("Total:"), 0, 0)
-        layout.addWidget(self.symbol_VED, 1, 0)
-        layout.addWidget(self.symbol_USD, 2, 0)
-        layout.addWidget(self.total_VED, 1, 1, Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.total_USD, 2, 1, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.symbol_VED, 1, 1)
+        layout.addWidget(self.symbol_USD, 2, 1)
+        layout.addWidget(self.total_VED, 1, 2, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.total_USD, 2, 2, Qt.AlignmentFlag.AlignRight)
 
-        layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        layout.setColumnStretch(0, 1)
+        layout.setHorizontalSpacing(10)
 
         self.setLayout(layout)
 
