@@ -367,10 +367,12 @@ class ProductPreviewWidget(QtWidgets.QFrame):
 
     PRODUCT_QUERY = """\
         SELECT name, purchase_currency, purchase_value, sell_currency,
-               sell_value, last_update, quantity
+               sell_value, last_update, i.quantity, c.quantity as in_cart
         FROM Products p
             INNER JOIN Inventory i
             ON p.id = i.product
+            LEFT JOIN Cart c
+            ON p.id = c.product
         WHERE p.id = :id"""
 
     def __init__(self) -> None:
@@ -447,9 +449,12 @@ class ProductPreviewWidget(QtWidgets.QFrame):
                 sell_value,
                 last_update,
                 quantity,
+                in_cart,
             ) = (product_query.value(i) for i in range(product_query.record().count()))
 
+            purchase_symbol = CURRENCY_SYMBOL[purchase_currency]
             purchase_value = Decimal(purchase_value) / 100
+            sell_symbol = CURRENCY_SYMBOL[sell_currency]
             sell_value = Decimal(sell_value) / 100
             last_update = datetime.fromtimestamp(last_update)
 
@@ -467,22 +472,22 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             )
 
             self.name_label.setText(f"{name}")
-            self.price_label.setText(f"{sell_currency} {sell_value:.2f}")
+            self.price_label.setText(f"{sell_symbol} {sell_value:.2f}")
             self.quantity_label.setText(f"Existencias: {quantity}")
             self.purchase_label.setText(
-                f"Valor de compra: {purchase_currency} {purchase_value}"
+                f"Valor de compra: {purchase_symbol} {purchase_value}"
             )
             self.last_update_label.setText(f"Último cambio: {last_update}")
             self.margin_label.setText(f"Margen de ganancia: {margin:.2f}%")
-            self.profit_label.setText(f"Ganancia: {sell_currency} {profit:.2f}")
+            self.profit_label.setText(f"Ganancia: {sell_symbol} {profit:.2f}")
             self.inventory_value_label.setText(
-                f"Valor total del inventario: {purchase_currency} {inventory_value:.2f}"
+                f"Valor total del inventario: {purchase_symbol} {inventory_value:.2f}"
             )
             self.inventory_sell_value_label.setText(
-                f"Valor total de venta: {sell_currency} {inventory_sell_value:.2f}"
+                f"Valor total de venta: {sell_symbol} {inventory_sell_value:.2f}"
             )
             self.expected_profit_label.setText(
-                f"Ganancia total esperada: {sell_currency} {expected_profit:.2f}"
+                f"Ganancia total esperada: {sell_symbol} {expected_profit:.2f}"
             )
             self.show()
         else:
