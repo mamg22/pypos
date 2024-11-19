@@ -397,6 +397,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         name_font.setPointSize(name_font.pointSize() + 1)
         name_font.setBold(True)
         self.name_label.setFont(name_font)
+        self.name_label.setWordWrap(True)
 
         self.price_label = QtWidgets.QLabel()
         self.quantity_label = QtWidgets.QLabel()
@@ -408,9 +409,11 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.inventory_sell_value_label = QtWidgets.QLabel()
         self.expected_profit_label = QtWidgets.QLabel()
 
+        AF = Qt.AlignmentFlag
+
         self.grid.addWidget(self.name_label, 0, 0)
         self.grid.addWidget(
-            self.price_label, 0, 1, alignment=Qt.AlignmentFlag.AlignRight
+            self.price_label, 0, 1, alignment=(AF.AlignRight | AF.AlignTop)
         )
         self.grid.addWidget(self.quantity_label, 1, 0)
         self.grid.addWidget(self.purchase_label, 2, 0)
@@ -420,6 +423,8 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.grid.addWidget(self.inventory_value_label, 6, 0)
         self.grid.addWidget(self.inventory_sell_value_label, 7, 0)
         self.grid.addWidget(self.expected_profit_label, 8, 0)
+
+        self.grid.setColumnStretch(0, 1)
 
         self.show_product(None)
 
@@ -825,7 +830,14 @@ class InventoryWidget(QtWidgets.QWidget):
         self.preview = ProductPreviewWidget()
         self.product_actions = InventoryProductActions()
 
-        layout.addWidget(self.preview, 1)
+        preview_scroller = QtWidgets.QScrollArea()
+        self.preview_scroller = preview_scroller
+
+        preview_scroller.setWidget(self.preview)
+        preview_scroller.setWidgetResizable(True)
+        preview_scroller.setMaximumHeight(125)
+
+        layout.addWidget(self.preview_scroller)
         layout.addWidget(self.product_actions)
 
         self.product_table.selected.connect(self.preview.show_product)
@@ -844,6 +856,7 @@ class InventoryWidget(QtWidgets.QWidget):
         bottom_visible = product_id is not None
         self.preview.setVisible(bottom_visible)
         self.product_actions.setVisible(bottom_visible)
+        self.preview_scroller.setVisible(bottom_visible)
 
     @QtCore.Slot()
     def new(self):
