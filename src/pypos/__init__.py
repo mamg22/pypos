@@ -33,6 +33,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().addPermanentWidget(self.exchange_rate, 1)
 
         app_menu = QtWidgets.QMenu("Aplicación")
+
+        reports_action = app_menu.addAction("Reportes...")
+        reports_action.triggered.connect(self.show_reports)
         exit_action = app_menu.addAction("Salir")
         exit_action.triggered.connect(self.bye)
 
@@ -81,6 +84,10 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def show_cart(self) -> None:
         self.tabs.setCurrentWidget(self.cart)
+
+    @QtCore.Slot()
+    def show_reports(self) -> None:
+        pass
 
     @QtCore.Slot()
     def bye(self):
