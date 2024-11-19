@@ -3,7 +3,7 @@ from decimal import Decimal
 from PySide6 import QtCore, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
-from .common import adjust_value
+from .common import adjust_value, CURRENCY_SYMBOL
 
 SB = QtWidgets.QMessageBox.StandardButton
 
@@ -85,7 +85,7 @@ class CartTable(QtWidgets.QTableWidget):
             quantity_item.setText(str(quantity))
             quantity_item.setTextAlignment(number_align)
 
-            currency_symbol = "$" if sell_currency == "USD" else "Bs"
+            currency_symbol = CURRENCY_SYMBOL[sell_currency]
 
             unit_item = base_item.clone()
             unit_item.setText(f"{currency_symbol} {sell_value:.2f}")
@@ -134,15 +134,30 @@ class CartTotals(QtWidgets.QWidget):
     def __init__(self) -> None:
         super().__init__()
 
-        self.total_dolar = QtWidgets.QLabel()
+        self.total_USD = QtWidgets.QLabel()
+        self.total_VED = QtWidgets.QLabel()
 
-        total_font = self.total_dolar.font()
-        total_font.setPointSize(total_font.pointSize() * 3)
-        self.total_dolar.setFont(total_font)
+        price_font = self.total_USD.font()
+        price_font.setPointSize(int(price_font.pointSize() * 2.5))
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(QtWidgets.QLabel("Total:"))
-        layout.addWidget(self.total_dolar)
+        self.total_USD.setFont(price_font)
+        self.total_VED.setFont(price_font)
+
+        self.symbol_USD = QtWidgets.QLabel(CURRENCY_SYMBOL["USD"])
+        self.symbol_VED = QtWidgets.QLabel(CURRENCY_SYMBOL["VED"])
+
+        symbol_font = self.symbol_USD.font()
+        symbol_font.setPointSize(int(symbol_font.pointSize() * 2))
+
+        self.symbol_USD.setFont(symbol_font)
+        self.symbol_VED.setFont(symbol_font)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(QtWidgets.QLabel("Total:"), 0, 0)
+        layout.addWidget(self.symbol_VED, 1, 0)
+        layout.addWidget(self.symbol_USD, 2, 0)
+        layout.addWidget(self.total_VED, 1, 1, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.total_USD, 2, 1, Qt.AlignmentFlag.AlignRight)
 
         layout.setAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -175,7 +190,8 @@ class CartTotals(QtWidgets.QWidget):
             total_VED += adjust_value(sell_currency, "VED", sell_value * quantity)
             total_USD += adjust_value(sell_currency, "USD", sell_value * quantity)
 
-        self.total_dolar.setText(f"Bs {total_VED:.2f}\n$ {total_USD:.2f}")
+        self.total_VED.setText(f"{total_VED:.2f}")
+        self.total_USD.setText(f"{total_USD:.2f}")
 
 
 class CartActions(QtWidgets.QWidget):
