@@ -381,10 +381,8 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.setLineWidth(1)
         self.setFrameShape(type(self).Shape.StyledPanel)
 
+        self.setBackgroundRole(QtGui.QPalette.ColorRole.Base)
         self.setAutoFillBackground(True)
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), palette.base().color())
-        self.setPalette(palette)
 
         grid = QtWidgets.QGridLayout()
         self.grid = grid
