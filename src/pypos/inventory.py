@@ -680,6 +680,7 @@ class ProductTable(QtWidgets.QTableWidget):
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
         self.verticalHeader().hide()
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         self.itemSelectionChanged.connect(self.row_selected)
 
