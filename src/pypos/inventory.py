@@ -14,6 +14,7 @@ from .common import (
     calculate_margin,
     is_product_in_cart,
     CURRENCY_SYMBOL,
+    make_separator,
 )
 
 
@@ -92,6 +93,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.name.setValidator(QtGui.QRegularExpressionValidator(R"\S+(\s\S+)*"))
         form_layout.addRow("Nombre:", self.name)
 
+        form_layout.addRow(make_separator())
+
         currencies = [
             # Text: Symbol, UserData: Code
             ("Bs", "VED"),
@@ -152,11 +155,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow("Ganancia:", profit_layout)
 
-        separator = QtWidgets.QFrame()
-        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-
-        form_layout.addRow(separator)
+        form_layout.addRow(make_separator())
 
         self.quantity = QtWidgets.QSpinBox()
         self.quantity.setMaximum(1_000_000_000)

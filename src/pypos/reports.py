@@ -3,7 +3,7 @@ from decimal import Decimal
 from PySide6 import QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
-from .common import adjust_value, CURRENCY_SYMBOL
+from .common import adjust_value, CURRENCY_SYMBOL, make_separator
 
 
 class ReportsWindow(QtWidgets.QDialog):
@@ -42,9 +42,7 @@ class ReportsWindow(QtWidgets.QDialog):
         layout.addWidget(self.total_cost_VED, 1, 1)
         layout.addWidget(self.total_cost_USD, 1, 2)
 
-        separator = QtWidgets.QFrame()
-        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        separator = make_separator()
 
         layout.addWidget(separator, 2, 0, 1, layout.columnCount())
 

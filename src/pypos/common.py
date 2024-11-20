@@ -68,3 +68,11 @@ def is_product_in_cart(product_id: int) -> bool:
     query.next()
 
     return query.value(0) != 0
+
+
+def make_separator() -> QtWidgets.QFrame:
+    separator = QtWidgets.QFrame()
+    separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+    separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+
+    return separator
