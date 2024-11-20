@@ -135,6 +135,19 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow("Precio venta:", sell_price_layout)
 
+        self.profit_currency = QtWidgets.QLabel(
+            CURRENCY_SYMBOL[self.current_sell_currency]
+        )
+        self.profit = DecimalSpinBox()
+        self.profit.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
+
+        profit_layout = QtWidgets.QHBoxLayout()
+
+        profit_layout.addWidget(self.profit_currency)
+        profit_layout.addWidget(self.profit, 1)
+
+        form_layout.addRow("Ganancia:", profit_layout)
+
         separator = QtWidgets.QFrame()
         separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
@@ -167,6 +180,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.margin.valueChanged.connect(self.update_sell_value)
         self.sell_currency.currentIndexChanged.connect(self.adjust_sell_value)
         self.sell_value.valueChanged.connect(self.update_margin)
+        self.sell_value.valueChanged.connect(self.update_profit)
+        self.profit.valueChanged.connect(self.update_sell_from_profit)
 
     def load_existing_product(self, id: int) -> None:
         query = QtSql.QSqlQuery()
@@ -190,6 +205,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
                 adjust_value(purchase_currency, sell_currency, purchase_value),
             )
 
+            profit = sell_value - adjust_value(
+                self.current_purchase_currency,
+                self.current_sell_currency,
+                purchase_value,
+            )
+
             self.name.setText(name)
 
             p_currency = self.purchase_currency.findData(purchase_currency)
@@ -208,6 +229,9 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
             self.sell_value.setValue(float(sell_value))
             self.quantity.setValue(quantity)
+
+            self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
+            self.profit.setValue(float(profit))
 
     @QtCore.Slot()
     def accept(self):
@@ -322,8 +346,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         value = adjust_value(self.current_sell_currency, sell_currency, sell_value)
         self.current_sell_currency = sell_currency
 
-        with QtCore.QSignalBlocker(self.sell_value):
-            self.sell_value.setValue(float(value))
+        self.sell_value.setValue(float(value))
 
     @QtCore.Slot()
     def update_sell_value(self) -> None:
@@ -341,8 +364,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         value = adjust_value(self.current_sell_currency, sell_currency, value)
         self.current_sell_currency = sell_currency
 
-        with QtCore.QSignalBlocker(self.sell_value):
-            self.sell_value.setValue(float(value))
+        self.sell_value.setValue(float(value))
 
     @QtCore.Slot()
     def update_margin(self) -> None:
@@ -358,8 +380,33 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         margin = calculate_margin(sell_value, purchase_value)
 
-        with QtCore.QSignalBlocker(self.margin):
-            self.margin.setValue(float(margin))
+        self.margin.setValue(float(margin))
+
+    @QtCore.Slot()
+    def update_profit(self) -> None:
+        purchase_value = self.purchase_value.decimal_value()
+        sell_value = self.sell_value.decimal_value()
+
+        purchase_value = adjust_value(
+            self.current_purchase_currency, self.current_sell_currency, purchase_value
+        )
+
+        profit = sell_value - purchase_value
+        self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
+
+        self.profit.setValue(float(profit))
+
+    @QtCore.Slot()
+    def update_sell_from_profit(self) -> None:
+        purchase_value = self.purchase_value.decimal_value()
+        profit = self.profit.decimal_value()
+
+        purchase_value = adjust_value(
+            self.current_purchase_currency, self.current_sell_currency, purchase_value
+        )
+        sell_value = purchase_value + profit
+
+        self.sell_value.setValue(float(sell_value))
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
