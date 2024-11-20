@@ -107,6 +107,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.current_purchase_currency = currencies[0][1]
 
         self.purchase_value = DecimalSpinBox()
+        self.purchase_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.purchase_value.setMaximum(MAX_SAFE_DOUBLE)
 
         purchase_price_layout.addWidget(self.purchase_currency)
@@ -117,6 +118,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         sell_price_layout = QtWidgets.QHBoxLayout()
 
         self.margin = DecimalSpinBox()
+        self.margin.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.margin.setSuffix("%")
         self.margin.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
         form_layout.addRow("Margen:", self.margin)
@@ -128,6 +130,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.current_sell_currency = currencies[0][1]
 
         self.sell_value = DecimalSpinBox()
+        self.sell_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.sell_value.setMaximum(MAX_SAFE_DOUBLE)
 
         sell_price_layout.addWidget(self.sell_currency)
@@ -139,6 +142,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
             CURRENCY_SYMBOL[self.current_sell_currency]
         )
         self.profit = DecimalSpinBox()
+        self.profit.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.profit.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
 
         profit_layout = QtWidgets.QHBoxLayout()
