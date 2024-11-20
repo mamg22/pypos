@@ -6,6 +6,7 @@ from PySide6 import QtCore, QtWidgets, QtSql
 
 from . import inventory, settings
 from .cart import CartWidget
+from .reports import ReportsWindow
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -87,7 +88,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot()
     def show_reports(self) -> None:
-        pass
+        reports_window = ReportsWindow()
+        reports_window.exec()
 
     @QtCore.Slot()
     def bye(self):
