@@ -582,21 +582,24 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
 
+        self.product_name = QtWidgets.QLabel()
+        layout.addWidget(self.product_name, 0, 0, 1, 2)
+
         self.absolute_quantity = QtWidgets.QSpinBox()
         self.absolute_quantity.setMaximum(1_000_000_000)
 
-        layout.addWidget(QtWidgets.QLabel("En inventario:"), 0, 0)
-        layout.addWidget(self.absolute_quantity, 0, 1)
+        layout.addWidget(QtWidgets.QLabel("En inventario:"), 1, 0)
+        layout.addWidget(self.absolute_quantity, 1, 1)
 
-        layout.addWidget(make_separator(), 1, 0, 1, 2)
+        layout.addWidget(make_separator(), 2, 0, 1, 2)
 
         self.relative_quantity = QtWidgets.QSpinBox()
         self.relative_quantity.setRange(-1_000_000_000, 1_000_000_000)
 
-        layout.addWidget(QtWidgets.QLabel("Ingresar/Egresar:"), 2, 0)
-        layout.addWidget(self.relative_quantity, 2, 1)
+        layout.addWidget(QtWidgets.QLabel("Ingresar/Egresar:"), 3, 0)
+        layout.addWidget(self.relative_quantity, 3, 1)
 
-        layout.addWidget(make_separator(), 3, 0, 1, 2)
+        layout.addWidget(make_separator(), 4, 0, 1, 2)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
         buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
@@ -615,7 +618,14 @@ class ProductQuantityDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def load_from_stored(self):
         query = QtSql.QSqlQuery()
-        query.prepare("SELECT quantity FROM Inventory WHERE product = :product")
+        query.prepare("""\
+        SELECT name, quantity
+        FROM Inventory i
+            INNER JOIN Products p
+            ON i.product = p.id
+        WHERE product = :product
+        """)
+
         query.bindValue(":product", self.product_id)
 
         if not query.exec():
@@ -623,8 +633,10 @@ class ProductQuantityDialog(QtWidgets.QDialog):
             return
 
         query.next()
-        quantity = query.value(0)
+        name = query.value(0)
+        quantity = query.value(1)
 
+        self.product_name.setText(f"Existencias de:\n{name}")
         self.stored_quantity = quantity
 
         self.absolute_quantity.setValue(quantity)
@@ -633,7 +645,25 @@ class ProductQuantityDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def on_reset(self):
         self.relative_quantity.setValue(0)
-        self.load_from_stored()
+        self.absolute_quantity.setValue(self.stored_quantity)
+
+    @QtCore.Slot()
+    def accept(self):
+        quantity = self.absolute_quantity.value()
+
+        query = QtSql.QSqlQuery()
+        query.prepare("""\
+        UPDATE Inventory SET quantity = :quantity WHERE product = :product
+        """)
+
+        query.bindValue(":product", self.product_id)
+        query.bindValue(":quantity", quantity)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+
+        super().accept()
 
     @QtCore.Slot()
     def apply_absolute(self) -> None:
@@ -657,7 +687,7 @@ class InventoryProductActions(QtWidgets.QWidget):
     edit_requested = QtCore.Signal(int)
     cart_item = QtCore.Signal(int, int)
     view_in_cart = QtCore.Signal(int)
-    product_updated = QtCore.Signal(int, int)
+    product_updated = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -766,50 +796,10 @@ class InventoryProductActions(QtWidgets.QWidget):
         if self.product_id is None:
             return
 
-        query = QtSql.QSqlQuery()
-        query.prepare("""\
-        SELECT name, quantity
-        FROM Products p
-            INNER JOIN Inventory i
-            ON i.product = p.id
-        WHERE p.id = :id
-        """)
-
-        query.bindValue(":id", self.product_id)
-
-        if not query.exec():
-            print(query.lastError())
-            return
-        query.next()
-
-        name = query.value(0)
-        quantity = query.value(1)
-
-        ProductQuantityDialog(self.product_id).exec()
-        return
-
-        quantity, ok = QtWidgets.QInputDialog.getInt(
-            self,
-            "Ajustar existencias",
-            f"Unidades de {name}:",
-            quantity,
-            0,
-            1_000_000_000,
-        )
-
-        if ok:
-            query.prepare("""\
-            UPDATE Inventory SET quantity = :quantity WHERE product = :product
-            """)
-
-            query.bindValue(":product", self.product_id)
-            query.bindValue(":quantity", quantity)
-
-            if not query.exec():
-                print(query.lastError())
-                return
-
-            self.product_updated.emit(self.product_id, quantity)
+        quantity_dialog = ProductQuantityDialog(self.product_id)
+        result = quantity_dialog.exec()
+        if result == ProductQuantityDialog.DialogCode.Accepted:
+            self.product_updated.emit(self.product_id)
 
     @QtCore.Slot()
     def product_edit(self) -> None:
