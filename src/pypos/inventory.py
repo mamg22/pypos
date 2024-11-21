@@ -572,6 +572,83 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.show_product(self.current_id)
 
 
+class ProductQuantityDialog(QtWidgets.QDialog):
+    def __init__(self, product_id: int) -> None:
+        super().__init__()
+
+        self.product_id = product_id
+
+        layout = QtWidgets.QGridLayout()
+        self.setLayout(layout)
+
+        self.absolute_quantity = QtWidgets.QSpinBox()
+        self.absolute_quantity.setMaximum(1_000_000_000)
+
+        layout.addWidget(QtWidgets.QLabel("En inventario:"), 0, 0)
+        layout.addWidget(self.absolute_quantity, 0, 1)
+
+        layout.addWidget(make_separator(), 1, 0, 1, 2)
+
+        self.relative_quantity = QtWidgets.QSpinBox()
+        self.relative_quantity.setRange(-1_000_000_000, 1_000_000_000)
+
+        layout.addWidget(QtWidgets.QLabel("Ingresar/Egresar:"), 2, 0)
+        layout.addWidget(self.relative_quantity, 2, 1)
+
+        layout.addWidget(make_separator(), 3, 0, 1, 2)
+
+        SB = QtWidgets.QDialogButtonBox.StandardButton
+        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
+
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        buttons.button(SB.Reset).clicked.connect(self.on_reset)
+
+        layout.addWidget(buttons, layout.rowCount(), 0, 1, layout.columnCount())
+
+        self.absolute_quantity.valueChanged.connect(self.apply_absolute)
+        self.relative_quantity.valueChanged.connect(self.apply_relative)
+
+        self.load_from_stored()
+
+    @QtCore.Slot()
+    def load_from_stored(self):
+        query = QtSql.QSqlQuery()
+        query.prepare("SELECT quantity FROM Inventory WHERE product = :product")
+        query.bindValue(":product", self.product_id)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+
+        query.next()
+        quantity = query.value(0)
+
+        self.stored_quantity = quantity
+
+        self.absolute_quantity.setValue(quantity)
+        self.relative_quantity.setMinimum(-quantity)
+
+    @QtCore.Slot()
+    def on_reset(self):
+        self.relative_quantity.setValue(0)
+        self.load_from_stored()
+
+    @QtCore.Slot()
+    def apply_absolute(self) -> None:
+        absolute_quantity = self.absolute_quantity.value()
+
+        with QtCore.QSignalBlocker(self.absolute_quantity):
+            self.relative_quantity.setValue(absolute_quantity - self.stored_quantity)
+
+    @QtCore.Slot()
+    def apply_relative(self) -> None:
+        relative_quantity = self.relative_quantity.value()
+
+        with QtCore.QSignalBlocker(self.relative_quantity):
+            self.absolute_quantity.setValue(self.stored_quantity + relative_quantity)
+
+
 class InventoryProductActions(QtWidgets.QWidget):
     product_id: int | None
 
@@ -706,6 +783,9 @@ class InventoryProductActions(QtWidgets.QWidget):
 
         name = query.value(0)
         quantity = query.value(1)
+
+        ProductQuantityDialog(self.product_id).exec()
+        return
 
         quantity, ok = QtWidgets.QInputDialog.getInt(
             self,
