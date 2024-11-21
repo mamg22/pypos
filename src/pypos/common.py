@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from decimal import Decimal, DecimalException
 from sys import float_info
 from typing import cast
@@ -76,3 +77,10 @@ def make_separator() -> QtWidgets.QFrame:
     separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
 
     return separator
+
+
+@contextmanager
+def settings_group(settings: QtCore.QSettings, group_name: str):
+    settings.beginGroup(group_name)
+    yield
+    settings.endGroup()

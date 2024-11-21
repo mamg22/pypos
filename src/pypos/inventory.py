@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql, QtGui
 from PySide6.QtCore import Qt
@@ -15,6 +16,7 @@ from .common import (
     is_product_in_cart,
     CURRENCY_SYMBOL,
     make_separator,
+    settings_group,
 )
 
 
@@ -95,19 +97,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow(make_separator())
 
-        currencies = [
-            # Text: Symbol, UserData: Code
-            ("Bs", "VED"),
-            ("$", "USD"),
-        ]
-
         purchase_price_layout = QtWidgets.QHBoxLayout()
 
         self.purchase_currency = QtWidgets.QComboBox()
 
-        for currency in currencies:
-            self.purchase_currency.addItem(*currency)
-        self.current_purchase_currency = currencies[0][1]
+        for currency, symbol in CURRENCY_SYMBOL.items():
+            self.purchase_currency.addItem(symbol, currency)
 
         self.purchase_value = DecimalSpinBox()
         self.purchase_value.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -124,13 +119,13 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.margin.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.margin.setSuffix("%")
         self.margin.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
+
         form_layout.addRow("Margen:", self.margin)
 
         self.sell_currency = QtWidgets.QComboBox()
 
-        for currency in currencies:
-            self.sell_currency.addItem(*currency)
-        self.current_sell_currency = currencies[0][1]
+        for currency, symbol in CURRENCY_SYMBOL.items():
+            self.sell_currency.addItem(symbol, currency)
 
         self.sell_value = DecimalSpinBox()
         self.sell_value.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -141,15 +136,13 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow("Precio venta:", sell_price_layout)
 
-        self.profit_currency = QtWidgets.QLabel(
-            CURRENCY_SYMBOL[self.current_sell_currency]
-        )
         self.profit = DecimalSpinBox()
         self.profit.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.profit.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
 
         profit_layout = QtWidgets.QHBoxLayout()
 
+        self.profit_currency = QtWidgets.QLabel()
         profit_layout.addWidget(self.profit_currency)
         profit_layout.addWidget(self.profit, 1)
 
@@ -175,8 +168,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         layout.addWidget(buttons)
 
-        if self.product_id is not None:
-            self.load_existing_product(self.product_id)
+        self.on_reset()
 
         self.purchase_currency.currentIndexChanged.connect(self.update_purchase_value)
         self.purchase_value.valueChanged.connect(self.update_sell_value)
@@ -208,12 +200,6 @@ class ProductInfoDialog(QtWidgets.QDialog):
                 adjust_value(purchase_currency, sell_currency, purchase_value),
             )
 
-            profit = sell_value - adjust_value(
-                self.current_purchase_currency,
-                self.current_sell_currency,
-                purchase_value,
-            )
-
             self.name.setText(name)
 
             p_currency = self.purchase_currency.findData(purchase_currency)
@@ -232,6 +218,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
             self.sell_value.setValue(float(sell_value))
             self.quantity.setValue(quantity)
+
+            profit = sell_value - adjust_value(
+                self.current_purchase_currency,
+                self.current_sell_currency,
+                purchase_value,
+            )
 
             self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
             self.profit.setValue(float(profit))
@@ -321,12 +313,39 @@ class ProductInfoDialog(QtWidgets.QDialog):
         if self.product_id is not None:
             self.load_existing_product(self.product_id)
         else:
+            settings = QtCore.QSettings()
+
+            with settings_group(settings, "defaults"):
+                purchase_currency = cast(
+                    str, settings.value("purchase_currency", "VED", type=str)
+                )
+                sell_currency = cast(
+                    str, settings.value("sell_currency", "VED", type=str)
+                )
+                default_margin = Decimal(
+                    cast(str, settings.value("margin", 0, type=str))
+                )
+
             self.name.clear()
-            self.purchase_currency.setCurrentIndex(0)
+            self.purchase_currency.setCurrentIndex(
+                self.purchase_currency.findData(purchase_currency)
+            )
+            self.current_purchase_currency = purchase_currency
+
             self.purchase_value.setValue(0)
+
             self.margin.setValue(0)
-            self.sell_currency.setCurrentIndex(0)
+            self.margin.setValue(float(default_margin))
+
+            self.sell_currency.setCurrentIndex(
+                self.sell_currency.findData(sell_currency)
+            )
+            self.current_sell_currency = sell_currency
+
             self.sell_value.setValue(0)
+
+            self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
+
             self.quantity.setValue(0)
 
     @QtCore.Slot()

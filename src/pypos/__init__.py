@@ -41,8 +41,10 @@ class MainWindow(QtWidgets.QMainWindow):
         exit_action.triggered.connect(self.bye)
 
         options_menu = QtWidgets.QMenu("Opciones")
-        settings_action = options_menu.addAction("Tasa de cambio...")
-        settings_action.triggered.connect(self.show_rate_window)
+        rate_action = options_menu.addAction("Tasa de cambio...")
+        rate_action.triggered.connect(self.show_rate_window)
+        settings_action = options_menu.addAction("Configuración...")
+        settings_action.triggered.connect(self.show_settings_window)
 
         self.menuBar().addMenu(app_menu)
         self.menuBar().addMenu(options_menu)
@@ -75,6 +77,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.update_rate()
             self.inventory.refresh()
             self.cart.do_refresh()
+
+    @QtCore.Slot()
+    def show_settings_window(self) -> None:
+        settings_dialog = settings.SettingsWindow()
+        result = settings_dialog.exec()
+        if result == settings_dialog.DialogCode.Accepted:
+            pass
 
     @QtCore.Slot(int)
     def focus_inventory_item(self, product_id: int) -> None:
