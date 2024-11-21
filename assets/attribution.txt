@@ -1,0 +1,3 @@
+Cart.png
+by https://github.com/emojione/emojione/graphs/contributors
+Rendered from https://github.com/emojione/emojione/blob/2.2.7/assets/svg_bw/1f6d2.svg

@@ -225,7 +225,7 @@ class CartActions(QtWidgets.QWidget):
             self.delete_button,
         )
 
-        item_layout = QtWidgets.QVBoxLayout()
+        item_layout = QtWidgets.QHBoxLayout()
         item_layout.addWidget(self.units_button)
         item_layout.addWidget(self.view_in_inventory_button)
         item_layout.addWidget(self.delete_button)
@@ -237,7 +237,7 @@ class CartActions(QtWidgets.QWidget):
         self.accept_button = QtWidgets.QPushButton("Completar venta")
         self.discard_button = QtWidgets.QPushButton("Descartar todo")
 
-        cart_layout = QtWidgets.QVBoxLayout()
+        cart_layout = QtWidgets.QHBoxLayout()
         cart_layout.addWidget(self.accept_button)
         cart_layout.addWidget(self.discard_button)
 
@@ -399,11 +399,18 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_totals = CartTotals()
         self.cart_actions = CartActions()
 
+        self.cart_icon_image = QtGui.QPixmap("assets/Cart.png")
+        self.cart_icon = QtWidgets.QLabel()
+        self.cart_icon.setPixmap(self.cart_icon_image)
+        self.cart_icon.setMaximumSize(60, 60)
+        self.cart_icon.setScaledContents(True)
+
         main_layout = QtWidgets.QGridLayout()
 
         main_layout.addWidget(self.cart_table, 0, 0, 1, 2)
+        main_layout.addWidget(self.cart_icon, 1, 0, 1, 1)
         main_layout.addWidget(self.cart_totals, 1, 1, 1, 1)
-        main_layout.addWidget(self.cart_actions, 1, 0, 1, 1)
+        main_layout.addWidget(self.cart_actions, 2, 0, 1, 2)
 
         main_layout.setColumnStretch(1, 1)
 
