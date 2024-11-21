@@ -803,25 +803,28 @@ class ProductTable(QtWidgets.QTableWidget):
         row_flags = ItemFlag.ItemIsSelectable | ItemFlag.ItemIsEnabled
         number_align = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight
 
+        base_item = QtWidgets.QTableWidgetItem()
+        base_item.setFlags(row_flags)
+
+        n_recs = product_query.record().count()
         for row_num in range(n_rows):
             product_query.next()
             row_id, name, quantity, sell_currency, int_sell_value = (
-                product_query.value(i) for i in range(product_query.record().count())
+                product_query.value(i) for i in range(n_recs)
             )
             sell_value = Decimal(int_sell_value) / 100
 
-            base_item = QtWidgets.QTableWidgetItem()
-            base_item.setFlags(row_flags)
-            base_item.setData(Qt.ItemDataRole.UserRole, row_id)
+            row_base_item = base_item.clone()
+            row_base_item.setData(Qt.ItemDataRole.UserRole, row_id)
 
-            name_item = base_item.clone()
+            name_item = row_base_item.clone()
             name_item.setText(name)
 
-            quantity_item = base_item.clone()
+            quantity_item = row_base_item.clone()
             quantity_item.setText(str(quantity))
             quantity_item.setTextAlignment(number_align)
 
-            sell_value_item = base_item.clone()
+            sell_value_item = row_base_item.clone()
             sell_value_item.setText(
                 f"{CURRENCY_SYMBOL[sell_currency]} {sell_value:.2f}"
             )
@@ -831,7 +834,7 @@ class ProductTable(QtWidgets.QTableWidget):
             equivalent_value = adjust_value(
                 sell_currency, equivalent_currency, sell_value
             )
-            equivalent_item = base_item.clone()
+            equivalent_item = row_base_item.clone()
             equivalent_item.setText(
                 f"{CURRENCY_SYMBOL[equivalent_currency]} {equivalent_value:.2f}"
             )
