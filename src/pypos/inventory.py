@@ -153,7 +153,8 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.quantity = QtWidgets.QSpinBox()
         self.quantity.setMaximum(1_000_000_000)
 
-        form_layout.addRow("Existencias:", self.quantity)
+        if self.product_id is None:
+            form_layout.addRow("Existencias:", self.quantity)
 
         layout.addLayout(form_layout)
 
