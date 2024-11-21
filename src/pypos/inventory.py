@@ -579,6 +579,7 @@ class InventoryProductActions(QtWidgets.QWidget):
     edit_requested = QtCore.Signal(int)
     cart_item = QtCore.Signal(int, int)
     view_in_cart = QtCore.Signal(int)
+    product_updated = QtCore.Signal(int, int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -684,8 +685,50 @@ class InventoryProductActions(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def product_quantity(self) -> None:
-        if self.product_id is not None:
-            print("QUANTITY", self.product_id)
+        if self.product_id is None:
+            return
+
+        query = QtSql.QSqlQuery()
+        query.prepare("""\
+        SELECT name, quantity
+        FROM Products p
+            INNER JOIN Inventory i
+            ON i.product = p.id
+        WHERE p.id = :id
+        """)
+
+        query.bindValue(":id", self.product_id)
+
+        if not query.exec():
+            print(query.lastError())
+            return
+        query.next()
+
+        name = query.value(0)
+        quantity = query.value(1)
+
+        quantity, ok = QtWidgets.QInputDialog.getInt(
+            self,
+            "Ajustar existencias",
+            f"Unidades de {name}:",
+            quantity,
+            0,
+            1_000_000_000,
+        )
+
+        if ok:
+            query.prepare("""\
+            UPDATE Inventory SET quantity = :quantity WHERE product = :product
+            """)
+
+            query.bindValue(":product", self.product_id)
+            query.bindValue(":quantity", quantity)
+
+            if not query.exec():
+                print(query.lastError())
+                return
+
+            self.product_updated.emit(self.product_id, quantity)
 
     @QtCore.Slot()
     def product_edit(self) -> None:
@@ -938,6 +981,8 @@ class InventoryWidget(QtWidgets.QWidget):
         self.product_actions.edit_requested.connect(self.edit)
         self.product_actions.cart_item.connect(self.cart_item)
         self.product_actions.view_in_cart.connect(self.view_in_cart)
+        self.product_actions.product_updated.connect(self.product_table.refresh_table)
+        self.product_actions.product_updated.connect(self.product_table.focus_product)
 
         self.toggle_bottom(None)
 
