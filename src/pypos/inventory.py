@@ -705,6 +705,12 @@ class ProductTable(QtWidgets.QTableWidget):
     query: str | None
     selected = QtCore.Signal(object)
 
+    # If there's a query
+    #      Rank prefix matches first,
+    #      then by word prefix match,
+    #      then the rest;
+    #      Items with same rank are sorted by name
+    # If no query, then just sort by name
     TABLE_QUERY = """
     SELECT p.id, name, quantity, sell_currency, sell_value
     FROM Products p
@@ -712,11 +718,17 @@ class ProductTable(QtWidgets.QTableWidget):
         ON p.id = i.product
     {where_clause}
     ORDER BY
-        CASE
-            WHEN like(:name_simplified || '%', name_simplified) THEN 1
-            WHEN like(concat('% ', :name_simplified, '%'), name_simplified) THEN 2
-            ELSE 3
-        END, name_simplified
+        iif(length(:name_simplified),
+            CASE
+                WHEN like(:name_simplified || '%', name_simplified, '\\')
+                    THEN 1
+                WHEN like(concat('% ', :name_simplified, '%'), name_simplified, '\\')
+                    THEN 2
+                ELSE 3
+            END,
+            NULL
+        ),
+        name_simplified
     """
 
     def __init__(self, parent=None) -> None:
@@ -756,7 +768,7 @@ class ProductTable(QtWidgets.QTableWidget):
     @QtCore.Slot(type(None))
     def refresh_table(self):
         where_clause = (
-            " WHERE name_simplified LIKE concat('%', :name_simplified, '%')"
+            " WHERE name_simplified LIKE concat('%', :name_simplified, '%') ESCAPE '\\' "
             if self.query is not None
             else ""
         )
@@ -766,7 +778,13 @@ class ProductTable(QtWidgets.QTableWidget):
 
         product_query.prepare(self.TABLE_QUERY.format(where_clause=where_clause))
         if self.query is not None:
-            query = unidecode(self.query).lower()
+            query = (
+                unidecode(self.query)
+                .lower()
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+                .replace(" ", "%")
+            )
             product_query.bindValue(":name_simplified", query)
 
         if not product_query.exec():
