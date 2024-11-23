@@ -89,8 +89,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot(int)
     def focus_inventory_item(self, product_id: int) -> None:
-        self.inventory.inventory_table.set_query(None)
-        self.inventory.inventory_table.focus_product(product_id)
+        self.inventory.focus_inventory_item(product_id)
         self.tabs.setCurrentWidget(self.inventory)
 
     @QtCore.Slot()

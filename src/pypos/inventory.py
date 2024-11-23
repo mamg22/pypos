@@ -51,6 +51,10 @@ class InventoryTopBar(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel("Buscar:"))
         layout.addWidget(search_bar)
 
+    @QtCore.Slot()
+    def clear_search(self):
+        self.search_bar.clear()
+
 
 class ProductInfoDialog(QtWidgets.QDialog):
     product_id: int | None
@@ -914,3 +918,9 @@ class InventoryWidget(QtWidgets.QWidget):
         self.inventory_table.refresh_table()
         self.inventory_table.focus_product(current_id)
         self.preview.refresh()
+
+    @QtCore.Slot()
+    def focus_inventory_item(self, product_id: int) -> None:
+        self.topbar.clear_search()
+        self.inventory_table.set_query(None)
+        self.inventory_table.focus_product(product_id)
