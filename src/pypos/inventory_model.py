@@ -9,7 +9,7 @@ from unidecode import unidecode
 from .common import CURRENCY_SYMBOL, adjust_value
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Product:
     id: int
     name: str
@@ -40,7 +40,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
         ON p.id = c.product
     """
     WHERE_CLAUSE = """\
-    WHERE name_simplified LIKE concat('%', :name_simplified, '%')
+    WHERE name_simplified LIKE concat('%', :name_simplified, '%') ESCAPE '\\'
     """
     ORDER_CLAUSE = """\
     ORDER BY
@@ -149,9 +149,9 @@ class InventoryModel(QtCore.QAbstractTableModel):
             self.query = (
                 unidecode(query)
                 .lower()
+                .replace("\\", "\\\\")
                 .replace("%", "\\%")
                 .replace("_", "\\_")
-                .replace("\\", "\\\\")
                 .replace(" ", "%")
             )
         else:
