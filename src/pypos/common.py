@@ -30,12 +30,18 @@ class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
         return value.replace(LOCALE_DECIMAL_SEP, ".", 1)
 
 
-def adjust_value(source_currency: str, target_currency: str, value: Decimal) -> Decimal:
+def adjust_value(
+    source_currency: str,
+    target_currency: str,
+    value: Decimal,
+    rate: Decimal | None = None,
+) -> Decimal:
     if source_currency == target_currency:
         return value
 
-    rate_src = cast(str, QtCore.QSettings().value("USD-VED-rate", 1, type=str))
-    rate = Decimal(rate_src)
+    if rate is None:
+        rate_src = cast(str, QtCore.QSettings().value("USD-VED-rate", 1, type=str))
+        rate = Decimal(rate_src)
 
     match (source_currency, target_currency):
         case ("VED", "USD"):

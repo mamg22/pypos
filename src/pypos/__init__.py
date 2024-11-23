@@ -3,6 +3,7 @@ import sys
 from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
+from PySide6.QtCore import Qt
 
 from . import inventory, settings
 from .cart import CartWidget
@@ -54,6 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.inventory.view_in_cart.connect(self.show_cart)
 
         self.cart.sale_completed.connect(self.inventory.refresh)
+        self.cart.item_deleted.connect(self.inventory.refresh)
         self.cart.view_in_inventory.connect(self.focus_inventory_item)
 
     @QtCore.Slot()
@@ -87,8 +89,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot(int)
     def focus_inventory_item(self, product_id: int) -> None:
-        self.inventory.product_table.set_query(None)
-        self.inventory.product_table.focus_product(product_id)
+        self.inventory.inventory_table.set_query(None)
+        self.inventory.inventory_table.focus_product(product_id)
         self.tabs.setCurrentWidget(self.inventory)
 
     @QtCore.Slot()

@@ -18,6 +18,7 @@ from .common import (
     make_separator,
     settings_group,
 )
+from .inventory_table import InventoryTable
 
 
 class InventoryTopBar(QtWidgets.QWidget):
@@ -834,181 +835,6 @@ class InventoryProductActions(QtWidgets.QWidget):
             self.view_in_cart.emit(self.product_id)
 
 
-class ProductTable(QtWidgets.QTableWidget):
-    query: str | None
-    selected = QtCore.Signal(object)
-
-    # If there's a query
-    #      Rank prefix matches first,
-    #      then by word prefix match,
-    #      then the rest;
-    #      Items with same rank are sorted by name
-    # If no query, then just sort by name
-    TABLE_QUERY = """
-    SELECT p.id, name, quantity, sell_currency, sell_value
-    FROM Products p
-        INNER JOIN Inventory i
-        ON p.id = i.product
-    {where_clause}
-    ORDER BY
-        iif(length(:name_simplified),
-            CASE
-                WHEN like(:name_simplified || '%', name_simplified, '\\')
-                    THEN 1
-                WHEN like(concat('% ', :name_simplified, '%'), name_simplified, '\\')
-                    THEN 2
-                ELSE 3
-            END,
-            NULL
-        ),
-        name_simplified
-    """
-
-    def __init__(self, parent=None) -> None:
-        super().__init__(0, 4, parent)
-
-        self.setColumnCount(4)
-        self.setHorizontalHeaderLabels(["Item", "Existencias", "Precio", "Equivalente"])
-        self.setSelectionBehavior(
-            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.Fixed
-        )
-        self.horizontalHeader().setSectionResizeMode(
-            0, QtWidgets.QHeaderView.ResizeMode.Stretch
-        )
-        self.verticalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.Fixed
-        )
-        self.verticalHeader().hide()
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-
-        self.itemSelectionChanged.connect(self.row_selected)
-
-        self.set_query(None)
-
-    @QtCore.Slot(str)
-    def set_query(self, query: str | None) -> None:
-        if query is not None:
-            self.query = query.strip() or None
-        else:
-            self.query = None
-        self.refresh_table()
-
-    @QtCore.Slot(str)
-    @QtCore.Slot(type(None))
-    def refresh_table(self):
-        where_clause = (
-            " WHERE name_simplified LIKE concat('%', :name_simplified, '%') ESCAPE '\\' "
-            if self.query is not None
-            else ""
-        )
-
-        db = QtSql.QSqlDatabase.database()
-        product_query = QtSql.QSqlQuery()
-
-        product_query.prepare(self.TABLE_QUERY.format(where_clause=where_clause))
-        if self.query is not None:
-            query = (
-                unidecode(self.query)
-                .lower()
-                .replace("%", "\\%")
-                .replace("_", "\\_")
-                .replace(" ", "%")
-            )
-            product_query.bindValue(":name_simplified", query)
-
-        if not product_query.exec():
-            print(product_query.lastError())
-
-        if db.driver().hasFeature(QtSql.QSqlDriver.DriverFeature.QuerySize):
-            n_rows = product_query.size()
-        else:
-            product_query.last()
-            n_rows = max(product_query.at() + 1, 0)
-            product_query.seek(QtSql.QSql.Location.BeforeFirstRow.value)
-
-        self.setRowCount(n_rows)
-
-        ItemFlag = Qt.ItemFlag
-        row_flags = ItemFlag.ItemIsSelectable | ItemFlag.ItemIsEnabled
-        number_align = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight
-
-        base_item = QtWidgets.QTableWidgetItem()
-        base_item.setFlags(row_flags)
-
-        n_recs = product_query.record().count()
-        for row_num in range(n_rows):
-            product_query.next()
-            row_id, name, quantity, sell_currency, int_sell_value = (
-                product_query.value(i) for i in range(n_recs)
-            )
-            sell_value = Decimal(int_sell_value) / 100
-
-            row_base_item = base_item.clone()
-            row_base_item.setData(Qt.ItemDataRole.UserRole, row_id)
-
-            name_item = row_base_item.clone()
-            name_item.setText(name)
-
-            quantity_item = row_base_item.clone()
-            quantity_item.setText(str(quantity))
-            quantity_item.setTextAlignment(number_align)
-
-            sell_value_item = row_base_item.clone()
-            sell_value_item.setText(
-                f"{CURRENCY_SYMBOL[sell_currency]} {sell_value:.2f}"
-            )
-            sell_value_item.setTextAlignment(number_align)
-
-            equivalent_currency = "VED" if sell_currency == "USD" else "USD"
-            equivalent_value = adjust_value(
-                sell_currency, equivalent_currency, sell_value
-            )
-            equivalent_item = row_base_item.clone()
-            equivalent_item.setText(
-                f"{CURRENCY_SYMBOL[equivalent_currency]} {equivalent_value:.2f}"
-            )
-            equivalent_item.setTextAlignment(number_align)
-
-            for idx, item in enumerate(
-                (name_item, quantity_item, sell_value_item, equivalent_item)
-            ):
-                self.setItem(row_num, idx, item)
-
-        if n_rows > 0 and self.query:
-            self.selectRow(0)
-        else:
-            self.clearSelection()
-        self.row_selected()
-
-    @QtCore.Slot()
-    def row_selected(self):
-        try:
-            item_id = self.selectedItems()[0].data(Qt.ItemDataRole.UserRole)
-            self.selected.emit(item_id)
-        except IndexError:
-            self.selected.emit(None)
-
-    @QtCore.Slot(int)
-    def focus_product(self, product_id: int) -> None:
-        model = self.model()
-
-        if model.hasIndex(0, 0):
-            found = model.match(
-                model.index(0, 0),
-                Qt.ItemDataRole.UserRole,
-                product_id,
-                flags=Qt.MatchFlag.MatchExactly,
-            )
-            if found:
-                idx = found[0]
-                self.selectRow(idx.row())
-                self.scrollTo(idx)
-
-
 class InventoryWidget(QtWidgets.QWidget):
     cart_item = QtCore.Signal(int, int)
     view_in_cart = QtCore.Signal(int)
@@ -1023,13 +849,13 @@ class InventoryWidget(QtWidgets.QWidget):
         self.topbar = topbar
         topbar.new_product.connect(self.new)
 
-        product_table = ProductTable(self)
-        self.product_table = product_table
+        inventory_table = InventoryTable(self)
+        self.inventory_table = inventory_table
 
-        topbar.search_submitted.connect(self.product_table.set_query)
+        topbar.search_submitted.connect(self.inventory_table.set_query)
 
         layout.addWidget(topbar)
-        layout.addWidget(product_table)
+        layout.addWidget(inventory_table)
 
         self.preview = ProductPreviewWidget()
         self.product_actions = InventoryProductActions()
@@ -1044,16 +870,18 @@ class InventoryWidget(QtWidgets.QWidget):
         layout.addWidget(self.preview_scroller)
         layout.addWidget(self.product_actions)
 
-        self.product_table.selected.connect(self.preview.show_product)
-        self.product_table.selected.connect(self.product_actions.set_product)
-        self.product_table.selected.connect(self.toggle_bottom)
+        self.inventory_table.selected.connect(self.preview.show_product)
+        self.inventory_table.selected.connect(self.product_actions.set_product)
+        self.inventory_table.selected.connect(self.toggle_bottom)
 
-        self.product_actions.deleted.connect(self.product_table.refresh_table)
+        self.product_actions.deleted.connect(self.inventory_table.refresh_table)
         self.product_actions.edit_requested.connect(self.edit)
         self.product_actions.cart_item.connect(self.cart_item)
+        self.product_actions.cart_item.connect(self.inventory_table.refresh_table)
+        self.product_actions.cart_item.connect(self.inventory_table.focus_product)
         self.product_actions.view_in_cart.connect(self.view_in_cart)
-        self.product_actions.product_updated.connect(self.product_table.refresh_table)
-        self.product_actions.product_updated.connect(self.product_table.focus_product)
+        self.product_actions.product_updated.connect(self.inventory_table.refresh_table)
+        self.product_actions.product_updated.connect(self.inventory_table.focus_product)
 
         self.toggle_bottom(None)
 
@@ -1066,22 +894,23 @@ class InventoryWidget(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def new(self):
-        w = ProductInfoDialog()
-        result = w.exec()
+        dialog = ProductInfoDialog()
+        result = dialog.exec()
         if result == ProductInfoDialog.DialogCode.Accepted:
-            self.product_table.refresh_table()
+            self.inventory_table.refresh_table()
+            self.inventory_table.focus_product(dialog.product_id)
 
     @QtCore.Slot(int)
     def edit(self, product_id: int) -> None:
         dialog = ProductInfoDialog(product_id)
         result = dialog.exec()
         if result == ProductInfoDialog.DialogCode.Accepted:
-            self.product_table.refresh_table()
-            self.product_table.focus_product(product_id)
+            self.inventory_table.refresh_table()
+            self.inventory_table.focus_product(product_id)
 
     @QtCore.Slot()
     def refresh(self) -> None:
         current_id = self.preview.current_id
-        self.product_table.refresh_table()
-        self.product_table.focus_product(current_id)
+        self.inventory_table.refresh_table()
+        self.inventory_table.focus_product(current_id)
         self.preview.refresh()
