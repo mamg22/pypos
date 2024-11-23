@@ -148,7 +148,7 @@ def build_database() -> None:
 
 def main() -> None:
     app = QtWidgets.QApplication([])
-    app.setOrganizationName("m2software")
+    app.setOrganizationName("mamg22")
     app.setApplicationName("pypos")
 
     db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
