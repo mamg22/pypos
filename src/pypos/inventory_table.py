@@ -49,14 +49,14 @@ class InventoryTable(QtWidgets.QWidget):
     @QtCore.Slot(str)
     def set_query(self, query: str | None) -> None:
         self.model.set_query(query)
-        self.focus_first()
+        self.auto_focus()
 
     @QtCore.Slot()
     def refresh_table(self):
         self.model.load_data()
-        self.focus_first()
+        self.auto_focus()
 
-    def focus_first(self):
+    def auto_focus(self):
         sel_model = self.table.selectionModel()
 
         if self.model.rowCount() > 0 and self.model.query:
