@@ -177,12 +177,11 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.on_reset()
 
         self.purchase_currency.currentIndexChanged.connect(self.update_purchase_value)
-        self.purchase_value.valueChanged.connect(self.update_sell_value)
-        self.margin.valueChanged.connect(self.update_sell_value)
+        self.purchase_value.valueChanged.connect(self.update_from_margin)
+        self.margin.valueChanged.connect(self.update_from_margin)
         self.sell_currency.currentIndexChanged.connect(self.adjust_sell_value)
-        self.sell_value.valueChanged.connect(self.update_margin)
-        self.sell_value.valueChanged.connect(self.update_profit)
-        self.profit.valueChanged.connect(self.update_sell_from_profit)
+        self.sell_value.valueChanged.connect(self.update_from_sell_value)
+        self.profit.valueChanged.connect(self.update_from_profit)
 
     def load_existing_product(self, id: int) -> None:
         query = QtSql.QSqlQuery()
@@ -376,8 +375,13 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         self.sell_value.setValue(float(value))
 
+    # The following requires blocking signals temporarily to avoid the situation
+    # where the currently edited spinner is also changed programatically, causing a
+    # very unpleasant experience. So each field updates the other two fields by
+    # itself
+
     @QtCore.Slot()
-    def update_sell_value(self) -> None:
+    def update_from_margin(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         margin = Decimal(1) + self.margin.decimal_value() / 100
 
@@ -392,10 +396,13 @@ class ProductInfoDialog(QtWidgets.QDialog):
         value = adjust_value(self.current_sell_currency, sell_currency, value)
         self.current_sell_currency = sell_currency
 
-        self.sell_value.setValue(float(value))
+        with QtCore.QSignalBlocker(self.sell_value), QtCore.QSignalBlocker(self.profit):
+            self.sell_value.setValue(float(value))
+            self.profit.setValue(float(value - purchase_value))
+            self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
 
     @QtCore.Slot()
-    def update_margin(self) -> None:
+    def update_from_sell_value(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         sell_value = self.sell_value.decimal_value()
 
@@ -407,34 +414,28 @@ class ProductInfoDialog(QtWidgets.QDialog):
         sell_value = adjust_value(self.current_sell_currency, sell_currency, sell_value)
 
         margin = calculate_margin(sell_value, purchase_value)
-
-        self.margin.setValue(float(margin))
-
-    @QtCore.Slot()
-    def update_profit(self) -> None:
-        purchase_value = self.purchase_value.decimal_value()
-        sell_value = self.sell_value.decimal_value()
-
-        purchase_value = adjust_value(
-            self.current_purchase_currency, self.current_sell_currency, purchase_value
-        )
-
         profit = sell_value - purchase_value
-        self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
 
-        self.profit.setValue(float(profit))
+        with QtCore.QSignalBlocker(self.margin), QtCore.QSignalBlocker(self.profit):
+            self.margin.setValue(float(margin))
+            self.profit.setValue(float(profit))
+            self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
 
     @QtCore.Slot()
-    def update_sell_from_profit(self) -> None:
+    def update_from_profit(self) -> None:
         purchase_value = self.purchase_value.decimal_value()
         profit = self.profit.decimal_value()
 
         purchase_value = adjust_value(
             self.current_purchase_currency, self.current_sell_currency, purchase_value
         )
-        sell_value = purchase_value + profit
 
-        self.sell_value.setValue(float(sell_value))
+        sell_value = purchase_value + profit
+        margin = calculate_margin(sell_value, purchase_value)
+
+        with QtCore.QSignalBlocker(self.margin), QtCore.QSignalBlocker(self.sell_value):
+            self.margin.setValue(float(margin))
+            self.sell_value.setValue(float(sell_value))
 
 
 class ProductPreviewWidget(QtWidgets.QFrame):
