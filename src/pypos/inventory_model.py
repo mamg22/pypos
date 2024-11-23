@@ -194,6 +194,8 @@ class InventoryModel(QtCore.QAbstractTableModel):
                 case 0:
                     return product.name
                 case 1:
+                    if product.in_cart:
+                        return f"({product.in_cart}) {product.quantity}"
                     return product.quantity
                 case 2:
                     return f"{CURRENCY_SYMBOL[product.sell_currency]} {product.sell_value:.2f}"
