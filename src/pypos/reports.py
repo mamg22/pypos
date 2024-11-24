@@ -3,7 +3,12 @@ from decimal import Decimal
 from PySide6 import QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
-from .common import adjust_value, CURRENCY_SYMBOL, make_separator
+from .common import (
+    TranslatedDialogButtonBox,
+    adjust_value,
+    CURRENCY_SYMBOL,
+    make_separator,
+)
 
 
 class ReportsWindow(QtWidgets.QDialog):
@@ -32,7 +37,7 @@ class ReportsWindow(QtWidgets.QDialog):
         self.total_profit_USD.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = QtWidgets.QDialogButtonBox(SB.Ok)
+        buttons = TranslatedDialogButtonBox(SB.Ok)
 
         layout.addWidget(QLabel("Total valor de inventario:"), 0, 0)
         layout.addWidget(self.total_value_VED, 0, 1)

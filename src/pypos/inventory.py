@@ -17,6 +17,7 @@ from .common import (
     CURRENCY_SYMBOL,
     make_separator,
     settings_group,
+    TranslatedDialogButtonBox,
 )
 from .inventory_table import InventoryTable
 
@@ -166,7 +167,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
+        buttons = TranslatedDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
 
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -608,7 +609,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         layout.addWidget(make_separator(), 4, 0, 1, 2)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
+        buttons = TranslatedDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
 
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
