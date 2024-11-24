@@ -44,7 +44,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
     """
     ORDER_CLAUSE = """\
     ORDER BY
-        iif(:name_simplified,
+        iif(length(:name_simplified),
             CASE
                 WHEN like(:name_simplified || '%', name_simplified, '\\')
                     THEN 1
