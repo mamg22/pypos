@@ -66,7 +66,6 @@ class InventoryModel(QtCore.QAbstractTableModel):
         self.result_size = 0
 
         self.load_data()
-        self.fetchMore(QtCore.QModelIndex())
 
     def load_data(self):
         try:
@@ -90,7 +89,6 @@ class InventoryModel(QtCore.QAbstractTableModel):
             self.result_size = query.value(0)
 
             self.fetchMore(QtCore.QModelIndex())
-
         finally:
             self.endResetModel()
 
