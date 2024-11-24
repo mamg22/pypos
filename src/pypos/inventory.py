@@ -860,9 +860,6 @@ class InventoryWidget(QtWidgets.QWidget):
 
         topbar.search_submitted.connect(self.inventory_table.set_query)
 
-        layout.addWidget(topbar)
-        layout.addWidget(inventory_table)
-
         self.preview = ProductPreviewWidget()
         self.product_actions = InventoryProductActions()
 
@@ -871,9 +868,18 @@ class InventoryWidget(QtWidgets.QWidget):
 
         preview_scroller.setWidget(self.preview)
         preview_scroller.setWidgetResizable(True)
-        preview_scroller.setMaximumHeight(125)
 
-        layout.addWidget(self.preview_scroller)
+        self.splitter = QtWidgets.QSplitter()
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
+        self.splitter.setChildrenCollapsible(False)
+        self.splitter.addWidget(inventory_table)
+        self.splitter.addWidget(self.preview_scroller)
+        self.splitter.setSizes([0, 125])
+        self.splitter.setStretchFactor(0, 1)
+
+        layout.addWidget(topbar)
+
+        layout.addWidget(self.splitter, 1)
         layout.addWidget(self.product_actions)
 
         self.inventory_table.selected.connect(self.preview.show_product)
