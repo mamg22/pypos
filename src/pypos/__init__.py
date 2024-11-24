@@ -3,6 +3,7 @@ import sys
 from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
+from PySide6.QtCore import Qt
 
 from . import inventory, settings
 from .cart import CartWidget
@@ -147,7 +148,7 @@ def build_database() -> None:
 
 
 def main() -> None:
-    app = QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication([])
     app.setOrganizationName("mamg22")
     app.setApplicationName("pypos")
 

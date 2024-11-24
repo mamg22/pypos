@@ -30,32 +30,6 @@ class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
         return value.replace(LOCALE_DECIMAL_SEP, ".", 1)
 
 
-class TranslatedDialogButtonBox(QtWidgets.QDialogButtonBox):
-    def __init__(
-        self,
-        buttons: QtWidgets.QDialogButtonBox.StandardButton,
-        parent: QtWidgets.QWidget | None = None,
-    ):
-        super().__init__(buttons, parent)  # type: ignore
-
-        SB = QtWidgets.QDialogButtonBox.StandardButton
-
-        for sbutton in self.standardButtons():
-            button = self.button(sbutton)
-            match sbutton:
-                case SB.Ok:
-                    text = "Aceptar"
-                case SB.Cancel:
-                    text = "Cancelar"
-                case SB.Reset:
-                    text = "Reiniciar"
-                case SB.Save:
-                    text = "Guardar"
-                case _:
-                    continue
-            button.setText(text)
-
-
 def adjust_value(
     source_currency: str,
     target_currency: str,

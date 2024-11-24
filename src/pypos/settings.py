@@ -8,7 +8,6 @@ from .common import (
     DecimalSpinBox,
     MAX_SAFE_DOUBLE,
     CURRENCY_SYMBOL,
-    TranslatedDialogButtonBox,
     make_separator,
     settings_group,
 )
@@ -45,7 +44,7 @@ class SettingsWindow(QtWidgets.QDialog):
         self.setLayout(layout)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = TranslatedDialogButtonBox(SB.Save | SB.Cancel | SB.Reset)
+        buttons = QtWidgets.QDialogButtonBox(SB.Save | SB.Cancel | SB.Reset)
 
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -108,7 +107,7 @@ class ExchangeRateWindow(QtWidgets.QDialog):
         self.setLayout(layout)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = TranslatedDialogButtonBox(SB.Save | SB.Cancel | SB.Reset)
+        buttons = QtWidgets.QDialogButtonBox(SB.Save | SB.Cancel | SB.Reset)
 
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
