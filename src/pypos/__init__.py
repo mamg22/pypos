@@ -155,6 +155,15 @@ def main() -> None:
     db.setDatabaseName("./products.db")
     db.open()
 
+    translator = QtCore.QTranslator()
+    translator.load(
+        QtCore.QLocale(),
+        "qtbase",
+        "_",
+        QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibraryPath.TranslationsPath),
+    )
+    app.installTranslator(translator)
+
     build_database()
 
     main_window = MainWindow()
