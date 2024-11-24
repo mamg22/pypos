@@ -56,6 +56,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cart.sale_completed.connect(self.inventory.refresh)
         self.cart.item_deleted.connect(self.inventory.refresh)
+        self.cart.item_updated.connect(self.inventory.update_item)
         self.cart.view_in_inventory.connect(self.focus_inventory_item)
 
     @QtCore.Slot()

@@ -242,3 +242,27 @@ class InventoryModel(QtCore.QAbstractTableModel):
             return self.index(idx, 0)
         except KeyError:
             return QtCore.QModelIndex()
+
+    def update_item(self, product_id: int):
+        query = QtSql.QSqlQuery()
+        query.prepare(self.LOAD_QUERY + " WHERE id = :id")
+        query.bindValue(":id", product_id)
+
+        query.exec()
+
+        n_recs = query.record().count()
+
+        if query.next():
+            row_id, name, quantity, sell_currency, int_sell_value, in_cart = (
+                query.value(i) for i in range(n_recs)
+            )
+            sell_value = Decimal(int_sell_value) / 100
+
+            product = Product(
+                row_id, name, sell_currency, sell_value, quantity, in_cart
+            )
+
+            index_row = self.id_index_map[row_id]
+            self.products[index_row] = product
+
+            self.dataChanged.emit(self.index(index_row, 0), self.index(index_row, 3))

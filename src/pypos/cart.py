@@ -391,6 +391,7 @@ class CartWidget(QtWidgets.QWidget):
     refresh = QtCore.Signal()
     sale_completed = QtCore.Signal()
     item_deleted = QtCore.Signal(int)
+    item_updated = QtCore.Signal(int)
     view_in_inventory = QtCore.Signal(int)
 
     def __init__(self) -> None:
@@ -430,6 +431,7 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.item_deleted.connect(self.item_deleted)
         self.cart_actions.item_updated.connect(self.refresh)
         self.cart_actions.item_updated.connect(self.cart_table.focus_item)
+        self.cart_actions.item_updated.connect(self.item_updated)
 
         self.cart_actions.view_in_inventory.connect(self.view_in_inventory)
 

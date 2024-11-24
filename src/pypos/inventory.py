@@ -843,6 +843,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 class InventoryWidget(QtWidgets.QWidget):
     cart_item = QtCore.Signal(int, int)
     view_in_cart = QtCore.Signal(int)
+    update_item = QtCore.Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -879,14 +880,14 @@ class InventoryWidget(QtWidgets.QWidget):
         self.inventory_table.selected.connect(self.product_actions.set_product)
         self.inventory_table.selected.connect(self.toggle_bottom)
 
-        self.product_actions.deleted.connect(self.inventory_table.refresh_table)
+        self.product_actions.deleted.connect(self.inventory_table.handle_deleted)
         self.product_actions.edit_requested.connect(self.edit)
         self.product_actions.cart_item.connect(self.cart_item)
-        self.product_actions.cart_item.connect(self.inventory_table.refresh_table)
-        self.product_actions.cart_item.connect(self.inventory_table.focus_product)
+        self.product_actions.cart_item.connect(self.inventory_table.update_item)
         self.product_actions.view_in_cart.connect(self.view_in_cart)
-        self.product_actions.product_updated.connect(self.inventory_table.refresh_table)
-        self.product_actions.product_updated.connect(self.inventory_table.focus_product)
+        self.product_actions.product_updated.connect(self.inventory_table.update_item)
+
+        self.update_item.connect(self.inventory_table.update_item)
 
         self.toggle_bottom(None)
 

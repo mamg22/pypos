@@ -87,3 +87,20 @@ class InventoryTable(QtWidgets.QWidget):
         if found:
             self.table.selectRow(found.row())
             self.table.scrollTo(found)
+
+    @QtCore.Slot(int)
+    def update_item(self, product_id: int) -> None:
+        self.model.update_item(product_id)
+
+    @QtCore.Slot()
+    def handle_deleted(self) -> None:
+        try:
+            index = self.table.selectionModel().selectedRows()[0]
+        except IndexError:
+            return
+
+        self.refresh_table()
+
+        if index.isValid():
+            target = max(index.row(), 0)
+            self.table.selectRow(target)
