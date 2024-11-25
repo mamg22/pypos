@@ -474,6 +474,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         name_font.setBold(True)
         self.name_label.setFont(name_font)
         self.name_label.setWordWrap(True)
+        self.name_label.setTextFormat(Qt.TextFormat.PlainText)
 
         self.price_label = QtWidgets.QLabel()
         self.quantity_label = QtWidgets.QLabel()
@@ -589,6 +590,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
         self.product_name = QtWidgets.QLabel()
+        self.product_name.setTextFormat(Qt.TextFormat.PlainText)
         layout.addWidget(self.product_name, 0, 0, 1, 2)
 
         self.absolute_quantity = QtWidgets.QSpinBox()
