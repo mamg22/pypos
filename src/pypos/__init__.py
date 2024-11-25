@@ -32,6 +32,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.exchange_rate.setFont(rate_font)
         self.update_rate()
 
+        self.rate_check_timer = QtCore.QTimer(self)
+        self.rate_check_timer.timeout.connect(self.update_rate)
+        # Every 30 minutes
+        self.rate_check_timer.start(30 * 60 * 1000)
+
         self.statusBar().addPermanentWidget(self.exchange_rate, 1)
 
         app_menu = QtWidgets.QMenu("Aplicación")
@@ -64,13 +69,26 @@ class MainWindow(QtWidgets.QMainWindow):
         settings = QtCore.QSettings()
         value = str(settings.value("USD-VED-rate", 0))
         last_update = cast(float | None, settings.value("last-rate-update", None))
+
+        WARN_STYLE = "QLabel {color: red;}"
+
+        label = "Tasa dólar: "
+
         if last_update is not None:
             last_update_date = datetime.fromtimestamp(float(last_update))
-            self.exchange_rate.setText(
-                f"Tasa dólar: {value} Bs, {last_update_date:%d de %B %Y}"
-            )
+
+            label += f"{value} Bs, {last_update_date:%d-%m-%Y}"
+
+            if last_update_date.date() < datetime.now().date():
+                self.exchange_rate.setStyleSheet(WARN_STYLE)
+                label += " (Desactualizada)"
+            else:
+                self.exchange_rate.setStyleSheet("")
         else:
-            self.exchange_rate.setText("Tasa dólar: No establecido")
+            label += "No establecido"
+            self.exchange_rate.setStyleSheet(WARN_STYLE)
+
+        self.exchange_rate.setText(label)
 
     @QtCore.Slot()
     def show_rate_window(self) -> None:
