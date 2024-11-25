@@ -11,6 +11,7 @@ class InventoryTable(QtWidgets.QWidget):
     query: str | None
 
     selected = QtCore.Signal(object)  # Actually `int | None`
+    double_clicked = QtCore.Signal(int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -44,6 +45,8 @@ class InventoryTable(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.table.selectionModel().selectionChanged.connect(self.row_selected)
+
+        self.table.doubleClicked.connect(self.item_double_clicked)
 
     def keyReleaseEvent(self, event: QtGui.QKeyEvent):
         if event.key() == Qt.Key.Key_Escape:
@@ -120,3 +123,13 @@ class InventoryTable(QtWidgets.QWidget):
 
             if target_id is not None:
                 self.focus_product(target_id)
+
+    @QtCore.Slot(QtCore.QModelIndex)
+    def item_double_clicked(self, item: QtCore.QModelIndex):
+        if not item.isValid():
+            return
+
+        item_id = cast(int | None, self.model.data(item, Qt.ItemDataRole.UserRole))
+
+        if item_id is not None:
+            self.double_clicked.emit(item_id)

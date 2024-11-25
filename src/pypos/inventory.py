@@ -781,6 +781,9 @@ class InventoryProductActions(QtWidgets.QWidget):
         available = query.value(1)
         in_cart = query.value(2)
 
+        if in_cart:
+            return
+
         if available <= 0:
             QtWidgets.QMessageBox.warning(
                 self,
@@ -902,6 +905,8 @@ class InventoryWidget(QtWidgets.QWidget):
         self.inventory_table.selected.connect(self.preview.show_product)
         self.inventory_table.selected.connect(self.product_actions.set_product)
         self.inventory_table.selected.connect(self.toggle_bottom)
+
+        self.inventory_table.double_clicked.connect(self.product_actions.product_carted)
 
         self.product_actions.deleted.connect(self.inventory_table.handle_deleted)
         self.product_actions.edit_requested.connect(self.edit)

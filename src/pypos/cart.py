@@ -10,6 +10,7 @@ SB = QtWidgets.QMessageBox.StandardButton
 
 class CartTable(QtWidgets.QTableWidget):
     selected = QtCore.Signal(object)
+    double_clicked = QtCore.Signal(int)
 
     CART_QUERY = """\
     SELECT p.id, name, quantity, sell_currency, sell_value
@@ -40,6 +41,7 @@ class CartTable(QtWidgets.QTableWidget):
         )
 
         self.itemSelectionChanged.connect(self.row_selected)
+        self.itemDoubleClicked.connect(self.item_double_clicked)
 
         self.refresh()
 
@@ -128,6 +130,11 @@ class CartTable(QtWidgets.QTableWidget):
                 idx = found[0]
                 self.selectRow(idx.row())
                 self.scrollTo(idx)
+
+    @QtCore.Slot(QtWidgets.QTableWidgetItem)
+    def item_double_clicked(self, item: QtWidgets.QTableWidgetItem):
+        item_id = item.data(Qt.ItemDataRole.UserRole)
+        self.double_clicked.emit(item_id)
 
 
 class CartTotals(QtWidgets.QFrame):
@@ -441,6 +448,7 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_actions.view_in_inventory.connect(self.view_in_inventory)
 
         self.cart_table.selected.connect(self.cart_actions.set_current_id)
+        self.cart_table.double_clicked.connect(self.cart_actions.units)
 
     @QtCore.Slot(int)
     def view_in_cart(self, product_id: int) -> None:
