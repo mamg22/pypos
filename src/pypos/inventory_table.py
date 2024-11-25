@@ -1,3 +1,5 @@
+from typing import cast
+
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
@@ -103,9 +105,18 @@ class InventoryTable(QtWidgets.QWidget):
         except IndexError:
             return
 
+        if index.isValid():
+            target = max(index.row() - 1, 0)
+            target_index = index.siblingAtRow(target)
+
+            target_id = cast(
+                int | None, self.model.data(target_index, Qt.ItemDataRole.UserRole)
+            )
+        else:
+            return
+
         with waiting_cursor():
             self.refresh_table()
 
-            if index.isValid():
-                target = max(index.row(), 0)
-                self.table.selectRow(target)
+            if target_id is not None:
+                self.focus_product(target_id)
