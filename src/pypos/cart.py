@@ -215,9 +215,9 @@ class CartActions(QtWidgets.QWidget):
         item_actions = QtWidgets.QGroupBox("Producto seleccionado")
         self.item_actions = item_actions
 
-        self.units_button = QtWidgets.QPushButton("Unidades...")
-        self.view_in_inventory_button = QtWidgets.QPushButton("Ver en inventario")
-        self.delete_button = QtWidgets.QPushButton("Eliminar del carrito")
+        self.units_button = QtWidgets.QPushButton("&Unidades...")
+        self.view_in_inventory_button = QtWidgets.QPushButton("&Ver en inventario")
+        self.delete_button = QtWidgets.QPushButton("Elimina&r del carrito")
 
         self.item_action_buttons = (
             self.units_button,
@@ -234,8 +234,8 @@ class CartActions(QtWidgets.QWidget):
 
         cart_actions = QtWidgets.QGroupBox("Carrito")
 
-        self.accept_button = QtWidgets.QPushButton("Completar venta")
-        self.discard_button = QtWidgets.QPushButton("Descartar todo")
+        self.accept_button = QtWidgets.QPushButton("&Aceptar venta")
+        self.discard_button = QtWidgets.QPushButton("&Descartar todo")
 
         cart_layout = QtWidgets.QHBoxLayout()
         cart_layout.addWidget(self.accept_button)

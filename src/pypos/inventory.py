@@ -36,19 +36,23 @@ class InventoryTopBar(QtWidgets.QWidget):
         layout_margins.setTop(0)
         layout.setContentsMargins(layout_margins)
 
-        new_button = QtWidgets.QPushButton("Nuevo")
+        new_button = QtWidgets.QPushButton("&Nuevo")
         self.new_button = new_button
 
         new_button.clicked.connect(self.new_product)
+
+        self.search_label = QtWidgets.QLabel("&Buscar:")
 
         search_bar = QtWidgets.QLineEdit()
         self.search_bar = search_bar
         search_bar.textEdited.connect(self.search_submitted)
         search_bar.setClearButtonEnabled(True)
 
+        self.search_label.setBuddy(search_bar)
+
         layout.addWidget(new_button)
         layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel("Buscar:"))
+        layout.addWidget(self.search_label)
         layout.addWidget(search_bar)
 
     @QtCore.Slot()
@@ -98,7 +102,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.name.setMinimumWidth(300)
         # Required format: "word" or "word word..."
         self.name.setValidator(QtGui.QRegularExpressionValidator(R"\S+(\s\S+)*"))
-        form_layout.addRow("Nombre:", self.name)
+        form_layout.addRow("&Nombre:", self.name)
 
         form_layout.addRow(make_separator())
 
@@ -116,7 +120,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         purchase_price_layout.addWidget(self.purchase_currency)
         purchase_price_layout.addWidget(self.purchase_value, 1)
 
-        form_layout.addRow("Precio compra:", purchase_price_layout)
+        form_layout.addRow("Precio &compra:", purchase_price_layout)
 
         sell_price_layout = QtWidgets.QHBoxLayout()
 
@@ -125,7 +129,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.margin.setSuffix("%")
         self.margin.setRange(-MAX_SAFE_DOUBLE, MAX_SAFE_DOUBLE)
 
-        form_layout.addRow("Margen:", self.margin)
+        form_layout.addRow("&Margen:", self.margin)
 
         self.sell_currency = QtWidgets.QComboBox()
 
@@ -139,7 +143,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         sell_price_layout.addWidget(self.sell_currency)
         sell_price_layout.addWidget(self.sell_value, 1)
 
-        form_layout.addRow("Precio venta:", sell_price_layout)
+        form_layout.addRow("Precio &venta:", sell_price_layout)
 
         self.profit = DecimalSpinBox()
         self.profit.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -151,7 +155,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         profit_layout.addWidget(self.profit_currency)
         profit_layout.addWidget(self.profit, 1)
 
-        form_layout.addRow("Ganancia:", profit_layout)
+        form_layout.addRow("&Ganancia:", profit_layout)
 
         form_layout.addRow(make_separator())
 
@@ -159,7 +163,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.quantity.setMaximum(1_000_000_000)
 
         if self.product_id is None:
-            form_layout.addRow("Existencias:", self.quantity)
+            form_layout.addRow("E&xistencias:", self.quantity)
 
         layout.addLayout(form_layout)
 
@@ -596,7 +600,10 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.absolute_quantity = QtWidgets.QSpinBox()
         self.absolute_quantity.setMaximum(1_000_000_000)
 
-        layout.addWidget(QtWidgets.QLabel("En inventario:"), 1, 0)
+        self.absolute_label = QtWidgets.QLabel("En inventario:")
+        self.absolute_label.setBuddy(self.absolute_quantity)
+
+        layout.addWidget(self.absolute_label, 1, 0)
         layout.addWidget(self.absolute_quantity, 1, 1)
 
         layout.addWidget(make_separator(), 2, 0, 1, 2)
@@ -604,7 +611,10 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.relative_quantity = QtWidgets.QSpinBox()
         self.relative_quantity.setRange(-1_000_000_000, 1_000_000_000)
 
-        layout.addWidget(QtWidgets.QLabel("Ingresar/Egresar:"), 3, 0)
+        self.relative_label = QtWidgets.QLabel("Ingresar/Egresar:")
+        self.relative_label.setBuddy(self.relative_quantity)
+
+        layout.addWidget(self.relative_label, 3, 0)
         layout.addWidget(self.relative_quantity, 3, 1)
 
         layout.addWidget(make_separator(), 4, 0, 1, 2)
@@ -702,11 +712,11 @@ class InventoryProductActions(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
 
-        self.to_cart_button = QtWidgets.QPushButton("Agregar al Carrito")
-        self.quantity_button = QtWidgets.QPushButton("Existencias")
-        self.edit_button = QtWidgets.QPushButton("Editar")
-        self.delete_button = QtWidgets.QPushButton("Eliminar")
-        self.view_in_cart_button = QtWidgets.QPushButton("Ver en Carrito")
+        self.to_cart_button = QtWidgets.QPushButton("&Agregar al Carrito")
+        self.quantity_button = QtWidgets.QPushButton("E&xistencias")
+        self.edit_button = QtWidgets.QPushButton("&Editar")
+        self.delete_button = QtWidgets.QPushButton("Elimina&r")
+        self.view_in_cart_button = QtWidgets.QPushButton("&Ver en Carrito")
 
         layout.addWidget(self.to_cart_button)
         layout.addWidget(self.quantity_button)

@@ -21,8 +21,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabs.tabBar().setExpanding(True)
         self.tabs.tabBar().setDocumentMode(True)
 
-        self.tabs.addTab(self.inventory, "Inventario")
-        self.tabs.addTab(self.cart, "Carrito")
+        self.tabs.addTab(self.inventory, "&Inventario")
+        self.tabs.addTab(self.cart, "&Carrito")
 
         self.setCentralWidget(self.tabs)
 
@@ -39,17 +39,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.statusBar().addPermanentWidget(self.exchange_rate, 1)
 
-        app_menu = QtWidgets.QMenu("Aplicación")
+        app_menu = QtWidgets.QMenu("A&plicación")
 
-        reports_action = app_menu.addAction("Reportes...")
+        reports_action = app_menu.addAction("&Reportes...")
         reports_action.triggered.connect(self.show_reports)
-        exit_action = app_menu.addAction("Salir")
+        exit_action = app_menu.addAction("&Salir")
         exit_action.triggered.connect(self.bye)
 
-        options_menu = QtWidgets.QMenu("Opciones")
-        rate_action = options_menu.addAction("Tasa de cambio...")
+        options_menu = QtWidgets.QMenu("&Opciones")
+        rate_action = options_menu.addAction("&Tasa de cambio...")
         rate_action.triggered.connect(self.show_rate_window)
-        settings_action = options_menu.addAction("Configuración...")
+        settings_action = options_menu.addAction("&Configuración...")
         settings_action.triggered.connect(self.show_settings_window)
 
         self.menuBar().addMenu(app_menu)
