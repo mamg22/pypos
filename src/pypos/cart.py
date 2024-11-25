@@ -364,7 +364,12 @@ class CartActions(QtWidgets.QWidget):
         in_cart = query.value(2)
 
         quantity, ok = QtWidgets.QInputDialog.getInt(
-            self, "Cambiar unidades", f"Unidades de {name}:", in_cart, 1, available
+            self,
+            "Cambiar unidades",
+            "Unidades de este producto:",
+            in_cart,
+            1,
+            available,
         )
 
         if ok:

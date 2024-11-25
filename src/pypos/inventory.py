@@ -775,12 +775,17 @@ class InventoryProductActions(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(
                 self,
                 "No hay existencias",
-                f'No hay existencias de "{name}" para agregar al carrito.',
+                "No hay existencias de este producto para agregar al carrito.",
             )
             return
 
         quantity, ok = QtWidgets.QInputDialog.getInt(
-            self, "Agregar al carrito", f"Unidades de {name}:", in_cart, 1, available
+            self,
+            "Agregar al carrito",
+            "Unidades para agregar al carrito:",
+            in_cart,
+            1,
+            available,
         )
 
         if ok:
