@@ -120,7 +120,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
         purchase_price_layout.addWidget(self.purchase_currency)
         purchase_price_layout.addWidget(self.purchase_value, 1)
 
-        form_layout.addRow("Precio &compra:", purchase_price_layout)
+        self.purchase_label = QtWidgets.QLabel("Precio &compra:")
+        self.purchase_label.setBuddy(self.purchase_value)
+
+        form_layout.addRow(self.purchase_label, purchase_price_layout)
 
         sell_price_layout = QtWidgets.QHBoxLayout()
 
@@ -143,7 +146,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
         sell_price_layout.addWidget(self.sell_currency)
         sell_price_layout.addWidget(self.sell_value, 1)
 
-        form_layout.addRow("Precio &venta:", sell_price_layout)
+        self.sell_label = QtWidgets.QLabel("Precio &venta:")
+        self.sell_label.setBuddy(self.sell_value)
+
+        form_layout.addRow(self.sell_label, sell_price_layout)
 
         self.profit = DecimalSpinBox()
         self.profit.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -155,7 +161,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
         profit_layout.addWidget(self.profit_currency)
         profit_layout.addWidget(self.profit, 1)
 
-        form_layout.addRow("&Ganancia:", profit_layout)
+        self.profit_label = QtWidgets.QLabel("&Ganancia:")
+        self.profit_label.setBuddy(self.profit)
+
+        form_layout.addRow(self.profit_label, profit_layout)
 
         form_layout.addRow(make_separator())
 
