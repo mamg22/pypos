@@ -48,7 +48,7 @@ class InventoryTable(QtWidgets.QWidget):
 
         self.table.doubleClicked.connect(self.item_double_clicked)
 
-    def keyReleaseEvent(self, event: QtGui.QKeyEvent):
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
         if event.key() == Qt.Key.Key_Escape:
             self.table.selectionModel().clearSelection()
 
