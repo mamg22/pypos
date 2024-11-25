@@ -1,6 +1,7 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
+from .common import waiting_cursor
 from .inventory_model import InventoryModel
 
 
@@ -48,13 +49,15 @@ class InventoryTable(QtWidgets.QWidget):
 
     @QtCore.Slot(str)
     def set_query(self, query: str | None) -> None:
-        self.model.set_query(query)
-        self.auto_focus()
+        with waiting_cursor():
+            self.model.set_query(query)
+            self.auto_focus()
 
     @QtCore.Slot()
     def refresh_table(self):
-        self.model.load_data()
-        self.auto_focus()
+        with waiting_cursor():
+            self.model.load_data()
+            self.auto_focus()
 
     def auto_focus(self):
         sel_model = self.table.selectionModel()
@@ -78,15 +81,16 @@ class InventoryTable(QtWidgets.QWidget):
 
     @QtCore.Slot(int)
     def focus_product(self, product_id: int) -> None:
-        found = self.model.index_for_id(product_id)
-
-        while not found.isValid() and self.model.canFetchMore(QtCore.QModelIndex()):
-            self.model.fetchMore(QtCore.QModelIndex())
+        with waiting_cursor():
             found = self.model.index_for_id(product_id)
 
-        if found:
-            self.table.selectRow(found.row())
-            self.table.scrollTo(found)
+            while not found.isValid() and self.model.canFetchMore(QtCore.QModelIndex()):
+                self.model.fetchMore(QtCore.QModelIndex())
+                found = self.model.index_for_id(product_id)
+
+            if found:
+                self.table.selectRow(found.row())
+                self.table.scrollTo(found)
 
     @QtCore.Slot(int)
     def update_item(self, product_id: int) -> None:
@@ -99,8 +103,9 @@ class InventoryTable(QtWidgets.QWidget):
         except IndexError:
             return
 
-        self.refresh_table()
+        with waiting_cursor():
+            self.refresh_table()
 
-        if index.isValid():
-            target = max(index.row(), 0)
-            self.table.selectRow(target)
+            if index.isValid():
+                target = max(index.row(), 0)
+                self.table.selectRow(target)

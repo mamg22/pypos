@@ -4,6 +4,7 @@ from sys import float_info
 from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtGui, QtSql
+from PySide6.QtCore import Qt
 
 LOCALE_DECIMAL_SEP = QtCore.QLocale().decimalPoint()
 LOCALE_GROUP_SEP = QtCore.QLocale().groupSeparator()
@@ -90,3 +91,15 @@ def settings_group(settings: QtCore.QSettings, group_name: str):
     settings.beginGroup(group_name)
     yield
     settings.endGroup()
+
+
+@contextmanager
+def waiting_cursor():
+    app = cast(QtWidgets.QApplication, QtWidgets.QApplication.instance())
+
+    if app is not None:
+        app.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        yield
+        app.restoreOverrideCursor()
+    else:
+        raise RuntimeError("Could not get application instance")
