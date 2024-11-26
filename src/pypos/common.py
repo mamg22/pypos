@@ -67,9 +67,16 @@ def is_product_in_cart(product_id: int) -> bool:
     return query.value(0) != 0
 
 
-def make_separator() -> QtWidgets.QFrame:
+def make_separator(orientation: str = "h") -> QtWidgets.QFrame:
     separator = QtWidgets.QFrame()
-    separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+
+    if orientation == "h":
+        separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+    elif orientation == "v":
+        separator.setFrameShape(QtWidgets.QFrame.Shape.VLine)
+    else:
+        raise ValueError(f"Invalid orientation {repr(orientation)}")
+
     separator.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
 
     return separator
