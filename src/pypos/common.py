@@ -87,8 +87,10 @@ def waiting_cursor():
     app = cast(QtWidgets.QApplication, QtWidgets.QApplication.instance())
 
     if app is not None:
-        app.setOverrideCursor(Qt.CursorShape.WaitCursor)
-        yield
-        app.restoreOverrideCursor()
+        try:
+            app.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            yield
+        finally:
+            app.restoreOverrideCursor()
     else:
         raise RuntimeError("Could not get application instance")
