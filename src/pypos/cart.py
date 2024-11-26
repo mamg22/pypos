@@ -22,7 +22,7 @@ class CartTable(QtWidgets.QTableWidget):
     def __init__(self) -> None:
         super().__init__()
 
-        header_labels = ["Item", "Precio unitario", "Unidades", "Total"]
+        header_labels = ["Product", "Precio unitario", "Unidades", "Total"]
         self.setColumnCount(len(header_labels))
         self.setHorizontalHeaderLabels(header_labels)
 
