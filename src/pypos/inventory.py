@@ -599,7 +599,12 @@ class ProductPreviewWidget(QtWidgets.QFrame):
 
             self.name_label.setText(f"{name}")
             self.price_value.setText(format_currency(sell_value, sell_symbol))
-            self.quantity_value.setText(locale.toString(quantity))
+
+            quantity = locale.toString(quantity)
+            if in_cart:
+                quantity = f"({locale.toString(in_cart)} en carrito) {quantity}"
+            self.quantity_value.setText(quantity)
+
             self.purchase_value.setText(
                 format_currency(purchase_value, purchase_symbol)
             )
