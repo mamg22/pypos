@@ -210,7 +210,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
                     locale = QtCore.QLocale()
                     return locale.toCurrencyString(
                         float(sell_value),
-                        CURRENCY_SYMBOL[product.sell_currency] + " ",
+                        CURRENCY_SYMBOL[sell_currency] + " ",
                         2,
                     )
 

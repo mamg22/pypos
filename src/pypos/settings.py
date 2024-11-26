@@ -119,7 +119,7 @@ class ExchangeRateWindow(QtWidgets.QDialog):
     def accept(self) -> None:
         settings = QtCore.QSettings()
         settings.setValue("USD-VED-rate", str(self.exchange_rate.decimal_value()))
-        settings.setValue("last-rate-update", datetime.now().timestamp())
+        settings.setValue("last-rate-update", int(datetime.now().timestamp()))
 
         super().accept()
 

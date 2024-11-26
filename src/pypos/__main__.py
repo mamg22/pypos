@@ -68,16 +68,24 @@ class MainWindow(QtWidgets.QMainWindow):
     def update_rate(self) -> None:
         settings = QtCore.QSettings()
         value = str(settings.value("USD-VED-rate", 0))
-        last_update = cast(float | None, settings.value("last-rate-update", None))
+        last_update = cast(str | None, settings.value("last-rate-update", None))
 
         WARN_STYLE = "QLabel {color: red;}"
 
         label = "Tasa dólar: "
 
         if last_update is not None:
-            last_update_date = datetime.fromtimestamp(float(last_update))
+            last_update = int(last_update)
 
-            label += f"{value} Bs, {last_update_date:%d-%m-%Y}"
+            last_update_date = datetime.fromtimestamp(last_update)
+
+            locale = QtCore.QLocale()
+            date = locale.toString(
+                QtCore.QDateTime.fromSecsSinceEpoch(last_update).date(),
+                QtCore.QLocale.FormatType.ShortFormat,
+            )
+
+            label += f"{value} Bs, {date}"
 
             if last_update_date.date() < datetime.now().date():
                 self.exchange_rate.setStyleSheet(WARN_STYLE)
