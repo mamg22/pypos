@@ -551,7 +551,7 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             purchase_value = Decimal(purchase_value) / 100
             sell_symbol = CURRENCY_SYMBOL[sell_currency]
             sell_value = Decimal(sell_value) / 100
-            last_update = datetime.fromtimestamp(last_update)
+            last_update = QtCore.QDateTime.fromSecsSinceEpoch(last_update)
 
             margin = calculate_margin(
                 sell_value,
@@ -566,23 +566,37 @@ class ProductPreviewWidget(QtWidgets.QFrame):
                 purchase_currency, sell_currency, inventory_value
             )
 
+            locale = QtCore.QLocale()
+
+            def format_currency(
+                value: Decimal, currency: str, precision: int = 2
+            ) -> str:
+                f_value = float(value)
+                return locale.toCurrencyString(f_value, currency + " ", precision)
+
             self.name_label.setText(f"{name}")
-            self.price_label.setText(f"{sell_symbol} {sell_value:.2f}")
-            self.quantity_label.setText(f"Existencias: {quantity}")
+            self.price_label.setText(format_currency(sell_value, sell_symbol))
+            self.quantity_label.setText("Existencias: " + locale.toString(quantity))
             self.purchase_label.setText(
-                f"Valor de compra: {purchase_symbol} {purchase_value}"
+                f"Valor de compra: {format_currency(purchase_value, purchase_symbol)}"
             )
-            self.last_update_label.setText(f"Último cambio: {last_update}")
-            self.margin_label.setText(f"Margen de ganancia: {margin:.2f}%")
-            self.profit_label.setText(f"Ganancia: {sell_symbol} {profit:.2f}")
+            self.last_update_label.setText(
+                f"Último cambio: {locale.toString(last_update, QtCore.QLocale.FormatType.ShortFormat)}"
+            )
+            self.margin_label.setText(
+                f"Margen de ganancia: {locale.toString(float(margin), 'f', 2)}%"
+            )
+            self.profit_label.setText(
+                f"Ganancia: {format_currency(profit, sell_symbol)}"
+            )
             self.inventory_value_label.setText(
-                f"Valor total del inventario: {purchase_symbol} {inventory_value:.2f}"
+                f"Valor total del inventario: {format_currency(inventory_value, sell_symbol)}"
             )
             self.inventory_sell_value_label.setText(
-                f"Valor total de venta: {sell_symbol} {inventory_sell_value:.2f}"
+                f"Valor total de venta: {format_currency(inventory_sell_value, sell_symbol)}"
             )
             self.expected_profit_label.setText(
-                f"Ganancia total esperada: {sell_symbol} {expected_profit:.2f}"
+                f"Ganancia total esperada: {format_currency(expected_profit, sell_symbol)}"
             )
             self.show()
         else:

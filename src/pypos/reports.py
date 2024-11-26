@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from PySide6 import QtSql, QtWidgets
+from PySide6 import QtCore, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
 from .common import adjust_value, CURRENCY_SYMBOL, make_separator
@@ -96,18 +96,24 @@ class ReportsWindow(QtWidgets.QDialog):
 
         total_profit_VED = total_value_VED - total_cost_VED
 
+        locale = QtCore.QLocale()
+
+        def format_currency(value: Decimal, symbol: str, precision: int) -> str:
+            f_value = float(value)
+            return locale.toCurrencyString(f_value, symbol, precision)
+
         total_cost_USD = adjust_value("VED", "USD", total_cost_VED)
         total_value_USD = adjust_value("VED", "USD", total_value_VED)
         total_profit_USD = adjust_value("VED", "USD", total_profit_VED)
 
-        total_format = f"{CURRENCY_SYMBOL['VED']} {{:.2f}}"
+        symbol = CURRENCY_SYMBOL["VED"] + " "
 
-        self.total_cost_VED.setText(total_format.format(total_cost_VED))
-        self.total_value_VED.setText(total_format.format(total_value_VED))
-        self.total_profit_VED.setText(total_format.format(total_profit_VED))
+        self.total_cost_VED.setText(format_currency(total_cost_VED, symbol, 2))
+        self.total_value_VED.setText(format_currency(total_value_VED, symbol, 2))
+        self.total_profit_VED.setText(format_currency(total_profit_VED, symbol, 2))
 
-        total_format = f"{CURRENCY_SYMBOL['USD']} {{:.2f}}"
+        symbol = CURRENCY_SYMBOL["USD"] + " "
 
-        self.total_cost_USD.setText(total_format.format(total_cost_USD))
-        self.total_value_USD.setText(total_format.format(total_value_USD))
-        self.total_profit_USD.setText(total_format.format(total_profit_USD))
+        self.total_cost_USD.setText(format_currency(total_cost_USD, symbol, 2))
+        self.total_value_USD.setText(format_currency(total_value_USD, symbol, 2))
+        self.total_profit_USD.setText(format_currency(total_profit_USD, symbol, 2))

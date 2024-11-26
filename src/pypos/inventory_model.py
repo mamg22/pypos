@@ -196,13 +196,23 @@ class InventoryModel(QtCore.QAbstractTableModel):
                         return f"({product.in_cart}) {product.quantity}"
                     return product.quantity
                 case 2:
-                    return f"{CURRENCY_SYMBOL[product.sell_currency]} {product.sell_value:.2f}"
+                    locale = QtCore.QLocale()
+                    return locale.toCurrencyString(
+                        float(product.sell_value),
+                        CURRENCY_SYMBOL[product.sell_currency] + " ",
+                        2,
+                    )
                 case 3:
                     sell_currency = "VED" if product.sell_currency == "USD" else "USD"
                     sell_value = adjust_value(
                         product.sell_currency, sell_currency, product.sell_value
                     )
-                    return f"{CURRENCY_SYMBOL[sell_currency]} {sell_value:.2f}"
+                    locale = QtCore.QLocale()
+                    return locale.toCurrencyString(
+                        float(sell_value),
+                        CURRENCY_SYMBOL[product.sell_currency] + " ",
+                        2,
+                    )
 
         elif role == IDR.BackgroundRole and product.in_cart:
             return QtGui.QBrush(QtGui.QPalette().alternateBase().color().darker(105))

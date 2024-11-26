@@ -69,6 +69,8 @@ class CartTable(QtWidgets.QTableWidget):
         row_flags = ItemFlag.ItemIsSelectable | ItemFlag.ItemIsEnabled
         number_align = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight
 
+        locale = QtCore.QLocale()
+
         for row_num in range(n_rows):
             query.next()
             row_id, name, quantity, sell_currency, int_sell_value = (
@@ -87,16 +89,20 @@ class CartTable(QtWidgets.QTableWidget):
             quantity_item.setText(str(quantity))
             quantity_item.setTextAlignment(number_align)
 
-            currency_symbol = CURRENCY_SYMBOL[sell_currency]
+            currency_symbol = CURRENCY_SYMBOL[sell_currency] + " "
 
             unit_item = base_item.clone()
-            unit_item.setText(f"{currency_symbol} {sell_value:.2f}")
+            unit_item.setText(
+                locale.toCurrencyString(float(sell_value), currency_symbol, 2)
+            )
             unit_item.setTextAlignment(number_align)
 
             total_value = sell_value * quantity
 
             total_item = base_item.clone()
-            total_item.setText(f"{currency_symbol} {total_value:.2f}")
+            total_item.setText(
+                locale.toCurrencyString(float(total_value), currency_symbol, 2)
+            )
             total_item.setTextAlignment(number_align)
 
             for idx, item in enumerate(
@@ -203,8 +209,11 @@ class CartTotals(QtWidgets.QFrame):
             total_VED += adjust_value(sell_currency, "VED", sell_value * quantity)
             total_USD += adjust_value(sell_currency, "USD", sell_value * quantity)
 
-        self.total_VED.setText(f"{total_VED:.2f}")
-        self.total_USD.setText(f"{total_USD:.2f}")
+        locale = QtCore.QLocale()
+
+        # The type hints provided by Qt are wrong, arg 2 is string but marked as int
+        self.total_VED.setText(locale.toString(float(total_VED), "f", 2))  # type:ignore[reportArgumentType]
+        self.total_USD.setText(locale.toString(float(total_USD), "f", 2))  # type:ignore[reportArgumentType]
 
 
 class CartActions(QtWidgets.QWidget):
