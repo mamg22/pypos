@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt
 from . import inventory, settings
 from .cart import CartWidget
 from .reports import ReportsWindow
+from . import resources
 
 
 class MainWindow(QtWidgets.QMainWindow):

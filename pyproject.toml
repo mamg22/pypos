@@ -18,3 +18,9 @@ pypos = "pypos:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.hooks.custom]
+path = "src/scripts/build_hook.py"
+
+[dependency-groups]
+dev = []

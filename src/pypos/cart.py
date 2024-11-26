@@ -413,7 +413,7 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_totals = CartTotals()
         self.cart_actions = CartActions()
 
-        self.cart_icon_image = QtGui.QPixmap("assets/Cart.png")
+        self.cart_icon_image = QtGui.QPixmap(":/assets/Cart.png")
         self.cart_icon = QtWidgets.QLabel()
         self.cart_icon.setPixmap(self.cart_icon_image)
         self.cart_icon.setMaximumSize(60, 60)
