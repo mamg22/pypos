@@ -935,8 +935,11 @@ class InventoryWidget(QtWidgets.QWidget):
         self.product_actions.edit_requested.connect(self.edit)
         self.product_actions.cart_item.connect(self.cart_item)
         self.product_actions.cart_item.connect(self.inventory_table.update_item)
+        self.product_actions.cart_item.connect(self.preview.show_product)
+        self.product_actions.cart_item.connect(self.product_actions.set_product)
         self.product_actions.view_in_cart.connect(self.view_in_cart)
         self.product_actions.product_updated.connect(self.inventory_table.update_item)
+        self.product_actions.product_updated.connect(self.preview.show_product)
 
         self.update_item.connect(self.inventory_table.update_item)
 
@@ -964,6 +967,7 @@ class InventoryWidget(QtWidgets.QWidget):
         if result == ProductInfoDialog.DialogCode.Accepted:
             self.inventory_table.refresh_table()
             self.inventory_table.focus_product(product_id)
+            self.preview.show_product(product_id)
 
     @QtCore.Slot()
     def refresh(self) -> None:
