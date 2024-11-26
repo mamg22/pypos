@@ -181,7 +181,7 @@ def main() -> None:
         QtCore.QLocale(),
         "qtbase",
         "_",
-        QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibraryPath.TranslationsPath),
+        QtCore.QLibraryInfo.path(QtCore.QLibraryInfo.LibraryPath.TranslationsPath),
     )
     app.installTranslator(translator)
 
