@@ -1,13 +1,14 @@
 from datetime import datetime
+from pathlib import Path
 import sys
 from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
-from PySide6.QtCore import Qt
 
 from . import inventory, settings
 from .cart import CartWidget
 from .reports import ReportsWindow
+from . import resources as resources  # Only for the side effects
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -174,15 +175,9 @@ def build_database() -> None:
 
 
 def main() -> None:
-    from . import resources
-
     app = QtWidgets.QApplication(sys.argv)
     app.setOrganizationName("mamg22")
     app.setApplicationName("pypos")
-
-    db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
-    db.setDatabaseName("./products.db")
-    db.open()
 
     translator = QtCore.QTranslator()
     translator.load(
@@ -193,9 +188,38 @@ def main() -> None:
     )
     app.installTranslator(translator)
 
-    build_database()
+    appdata_dir = Path(
+        QtCore.QStandardPaths.writableLocation(
+            QtCore.QStandardPaths.StandardLocation.AppDataLocation
+        )
+    )
+    appdata_dir.mkdir(parents=True, exist_ok=True)
+
+    db_file = appdata_dir / "products.db"
+
+    db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
+    db.setDatabaseName(str(db_file))
+
+    if not db.open():
+        QtWidgets.QMessageBox.critical(
+            QtWidgets.QWidget(),
+            "Error de base de datos",
+            """\
+            <html>Error al conectar con la base de datos. Verifique si:
+                <ul>
+                    <li>Tiene espacio disponible el dispositivo</li>
+                    <li>Los directorios de datos de aplicación
+                    estén disponibles para escritura.</li>
+                </ul>
+            </html>
+            """,
+        )
+        return
+    else:
+        build_database()
 
     main_window = MainWindow()
+
     main_window.resize(800, 600)
     main_window.show()
 
