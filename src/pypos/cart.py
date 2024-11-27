@@ -203,9 +203,7 @@ class CartTotals(QtWidgets.QFrame):
 
         locale = QtCore.QLocale()
 
-        VED_sym, USD_sym = (
-            f"<small>{CURRENCY_SYMBOL[sym]}</small> " for sym in ("VED", "USD")
-        )
+        VED_sym, USD_sym = (f"{CURRENCY_SYMBOL[sym]} " for sym in ("VED", "USD"))
 
         self.total_VED.setText(locale.toCurrencyString(float(total_VED), VED_sym, 2))
         self.total_USD.setText(locale.toCurrencyString(float(total_USD), USD_sym, 2))
