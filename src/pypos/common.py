@@ -13,6 +13,8 @@ CURRENCY_SYMBOL = {
     "VED": "Bs",
 }
 
+CURRENCY_FACTOR = 100
+
 
 class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
     def decimal_value(self) -> Decimal:

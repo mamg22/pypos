@@ -3,7 +3,7 @@ from decimal import Decimal
 from PySide6 import QtCore, QtGui, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
-from .common import adjust_value, CURRENCY_SYMBOL
+from .common import adjust_value, CURRENCY_SYMBOL, CURRENCY_FACTOR
 
 SB = QtWidgets.QMessageBox.StandardButton
 
@@ -77,7 +77,7 @@ class CartTable(QtWidgets.QTableWidget):
             row_id, name, quantity, sell_currency, int_sell_value = (
                 query.value(i) for i in range(query.record().count())
             )
-            sell_value = Decimal(int_sell_value) / 100
+            sell_value = Decimal(int_sell_value) / CURRENCY_FACTOR
 
             base_item = QtWidgets.QTableWidgetItem()
             base_item.setFlags(row_flags)
@@ -195,7 +195,7 @@ class CartTotals(QtWidgets.QFrame):
 
         while query.next():
             sell_currency = query.value(0)
-            sell_value = Decimal(query.value(1)) / 100
+            sell_value = Decimal(query.value(1)) / CURRENCY_FACTOR
             quantity = query.value(2)
 
             total_VED += adjust_value(sell_currency, "VED", sell_value * quantity)

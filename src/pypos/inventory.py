@@ -15,6 +15,7 @@ from .common import (
     calculate_margin,
     is_product_in_cart,
     CURRENCY_SYMBOL,
+    CURRENCY_FACTOR,
     make_separator,
     settings_group,
 )
@@ -208,9 +209,9 @@ class ProductInfoDialog(QtWidgets.QDialog):
         if query.next():
             name = query.value(0)
             purchase_currency = query.value(1)
-            purchase_value = Decimal(query.value(2)) / 100
+            purchase_value = Decimal(query.value(2)) / CURRENCY_FACTOR
             sell_currency = query.value(3)
-            sell_value = Decimal(query.value(4)) / 100
+            sell_value = Decimal(query.value(4)) / CURRENCY_FACTOR
             quantity = query.value(5)
 
             margin = calculate_margin(
@@ -281,9 +282,9 @@ class ProductInfoDialog(QtWidgets.QDialog):
         query.bindValue(":name", name)
         query.bindValue(":name_simplified", name_simplified)
         query.bindValue(":purchase_currency", purchase_currency)
-        query.bindValue(":purchase_value", int(purchase_value * 100))
+        query.bindValue(":purchase_value", int(purchase_value * CURRENCY_FACTOR))
         query.bindValue(":sell_currency", sell_currency)
-        query.bindValue(":sell_value", int(sell_value * 100))
+        query.bindValue(":sell_value", int(sell_value * CURRENCY_FACTOR))
 
         if is_update:
             query.bindValue(":id", self.product_id)
@@ -587,9 +588,9 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             ) = (product_query.value(i) for i in range(product_query.record().count()))
 
             purchase_symbol = CURRENCY_SYMBOL[purchase_currency]
-            purchase_value = Decimal(purchase_value) / 100
+            purchase_value = Decimal(purchase_value) / CURRENCY_FACTOR
             sell_symbol = CURRENCY_SYMBOL[sell_currency]
-            sell_value = Decimal(sell_value) / 100
+            sell_value = Decimal(sell_value) / CURRENCY_FACTOR
             last_update = QtCore.QDateTime.fromSecsSinceEpoch(last_update)
 
             margin = calculate_margin(

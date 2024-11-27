@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtSql
 from PySide6.QtCore import Qt
 from unidecode import unidecode
 
-from .common import CURRENCY_SYMBOL, adjust_value
+from .common import CURRENCY_SYMBOL, CURRENCY_FACTOR, adjust_value
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +131,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
             row_id, name, quantity, sell_currency, int_sell_value, in_cart = (
                 query.value(i) for i in range(n_recs)
             )
-            sell_value = Decimal(int_sell_value) / 100
+            sell_value = Decimal(int_sell_value) / CURRENCY_FACTOR
 
             product = Product(
                 row_id, name, sell_currency, sell_value, quantity, in_cart
@@ -266,7 +266,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
             row_id, name, quantity, sell_currency, int_sell_value, in_cart = (
                 query.value(i) for i in range(n_recs)
             )
-            sell_value = Decimal(int_sell_value) / 100
+            sell_value = Decimal(int_sell_value) / CURRENCY_FACTOR
 
             product = Product(
                 row_id, name, sell_currency, sell_value, quantity, in_cart
