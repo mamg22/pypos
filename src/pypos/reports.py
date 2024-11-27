@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from PySide6 import QtCore, QtSql, QtWidgets
+from PySide6 import QtCore, QtGui, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
 from .common import adjust_value, CURRENCY_SYMBOL, make_separator
@@ -19,17 +19,18 @@ class ReportsWindow(QtWidgets.QDialog):
         self.total_value_VED = QLabel()
         self.total_profit_VED = QLabel()
 
-        self.total_cost_VED.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.total_value_VED.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.total_profit_VED.setAlignment(Qt.AlignmentFlag.AlignRight)
-
         self.total_cost_USD = QLabel()
         self.total_value_USD = QLabel()
         self.total_profit_USD = QLabel()
 
-        self.total_cost_USD.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.total_value_USD.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.total_profit_USD.setAlignment(Qt.AlignmentFlag.AlignRight)
+        for label in (
+            getattr(self, attrname)
+            for attrname in dir(self)
+            if attrname.startswith("total_")
+        ):
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            label.setCursor(QtGui.QCursor(Qt.CursorShape.IBeamCursor))
+            label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
         buttons = QtWidgets.QDialogButtonBox(SB.Ok)

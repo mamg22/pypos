@@ -510,6 +510,22 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.inventory_sell_value_value = QtWidgets.QLabel()
         self.expected_profit_value = QtWidgets.QLabel()
 
+        for value_label in (
+            self.price_value,
+            self.quantity_value,
+            self.purchase_value,
+            self.last_update_value,
+            self.margin_value,
+            self.profit_value,
+            self.inventory_value_value,
+            self.inventory_sell_value_value,
+            self.expected_profit_value,
+        ):
+            value_label.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            value_label.setCursor(QtGui.QCursor(Qt.CursorShape.IBeamCursor))
+
         AF = Qt.AlignmentFlag
 
         self.grid.addWidget(self.name_label, 0, 0, 1, 2)

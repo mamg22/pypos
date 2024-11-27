@@ -158,24 +158,15 @@ class CartTotals(QtWidgets.QFrame):
         price_font = self.total_USD.font()
         price_font.setPointSize(int(price_font.pointSize() * 2.5))
 
-        self.total_USD.setFont(price_font)
-        self.total_VED.setFont(price_font)
-
-        self.symbol_USD = QtWidgets.QLabel(CURRENCY_SYMBOL["USD"])
-        self.symbol_VED = QtWidgets.QLabel(CURRENCY_SYMBOL["VED"])
-
-        symbol_font = self.symbol_USD.font()
-        symbol_font.setPointSize(int(symbol_font.pointSize() * 2))
-
-        self.symbol_USD.setFont(symbol_font)
-        self.symbol_VED.setFont(symbol_font)
+        for label in (self.total_USD, self.total_VED):
+            label.setFont(price_font)
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            label.setCursor(QtGui.QCursor(Qt.CursorShape.IBeamCursor))
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(QtWidgets.QLabel("Total:"), 0, 0)
-        layout.addWidget(self.symbol_VED, 1, 1)
-        layout.addWidget(self.symbol_USD, 2, 1)
-        layout.addWidget(self.total_VED, 1, 2, Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.total_USD, 2, 2, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.total_VED, 1, 1, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.total_USD, 2, 1, Qt.AlignmentFlag.AlignRight)
 
         layout.setColumnStretch(0, 1)
         layout.setHorizontalSpacing(10)
@@ -211,9 +202,12 @@ class CartTotals(QtWidgets.QFrame):
 
         locale = QtCore.QLocale()
 
-        # The type hints provided by Qt are wrong, arg 2 is string but marked as int
-        self.total_VED.setText(locale.toString(float(total_VED), "f", 2))  # type:ignore[reportArgumentType]
-        self.total_USD.setText(locale.toString(float(total_USD), "f", 2))  # type:ignore[reportArgumentType]
+        VED_sym, USD_sym = (
+            f"<small>{CURRENCY_SYMBOL[sym]}</small> " for sym in ("VED", "USD")
+        )
+
+        self.total_VED.setText(locale.toCurrencyString(float(total_VED), VED_sym, 2))
+        self.total_USD.setText(locale.toCurrencyString(float(total_USD), USD_sym, 2))
 
 
 class CartActions(QtWidgets.QWidget):
