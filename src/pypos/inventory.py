@@ -16,8 +16,10 @@ from .common import (
     is_product_in_cart,
     CURRENCY_SYMBOL,
     CURRENCY_FACTOR,
+    QUANTITY_FACTOR,
     make_separator,
     settings_group,
+    FP_SHORTEST,
 )
 from .inventory_table import InventoryTable
 
@@ -169,8 +171,9 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow(make_separator())
 
-        self.quantity = QtWidgets.QSpinBox()
-        self.quantity.setMaximum(1_000_000_000)
+        self.quantity = DecimalSpinBox()
+        self.quantity.setMaximum(MAX_SAFE_DOUBLE)
+        self.quantity.setDecimals(3)
 
         if self.product_id is None:
             form_layout.addRow("E&xistencias:", self.quantity)
@@ -212,7 +215,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
             purchase_value = Decimal(query.value(2)) / CURRENCY_FACTOR
             sell_currency = query.value(3)
             sell_value = Decimal(query.value(4)) / CURRENCY_FACTOR
-            quantity = query.value(5)
+            quantity = Decimal(query.value(5)) / QUANTITY_FACTOR
 
             margin = calculate_margin(
                 sell_value,
@@ -236,7 +239,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
             self.current_sell_currency = sell_currency
 
             self.sell_value.setValue(float(sell_value))
-            self.quantity.setValue(quantity)
+            self.quantity.setValue(float(quantity))
 
             profit = sell_value - adjust_value(
                 self.current_purchase_currency,
@@ -254,7 +257,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
         purchase_value = self.purchase_value.decimal_value()
         sell_currency = self.sell_currency.currentData()
         sell_value = self.sell_value.decimal_value()
-        quantity = self.quantity.value()
+        quantity = self.quantity.decimal_value()
 
         is_update = self.product_id is not None
         name_simplified = unidecode(name).lower()
@@ -314,7 +317,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
             )
 
         query.bindValue(":id", self.product_id)
-        query.bindValue(":quantity", quantity)
+        query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
         if not query.exec():
             print(query.lastError())
@@ -592,6 +595,12 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             sell_symbol = CURRENCY_SYMBOL[sell_currency]
             sell_value = Decimal(sell_value) / CURRENCY_FACTOR
             last_update = QtCore.QDateTime.fromSecsSinceEpoch(last_update)
+            quantity = Decimal(quantity) / QUANTITY_FACTOR
+
+            if in_cart:
+                in_cart = Decimal(in_cart) / QUANTITY_FACTOR
+            else:
+                in_cart = None
 
             margin = calculate_margin(
                 sell_value,
@@ -617,9 +626,11 @@ class ProductPreviewWidget(QtWidgets.QFrame):
             self.name_label.setText(f"{name}")
             self.price_value.setText(format_currency(sell_value, sell_symbol))
 
-            quantity = locale.toString(quantity)
+            quantity = locale.toString(float(quantity), "f", FP_SHORTEST)
             if in_cart:
-                quantity = f"({locale.toString(in_cart)} en carrito) {quantity}"
+                in_cart_str = locale.toString(float(in_cart), "f", FP_SHORTEST)
+                quantity = f"({in_cart_str} en carrito) {quantity}"
+
             self.quantity_value.setText(quantity)
 
             self.purchase_value.setText(
@@ -661,8 +672,9 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.product_name.setTextFormat(Qt.TextFormat.PlainText)
         layout.addWidget(self.product_name, 0, 0, 1, 2)
 
-        self.absolute_quantity = QtWidgets.QSpinBox()
-        self.absolute_quantity.setMaximum(1_000_000_000)
+        self.absolute_quantity = DecimalSpinBox()
+        self.absolute_quantity.setMaximum(MAX_SAFE_DOUBLE)
+        self.absolute_quantity.setDecimals(3)
 
         self.absolute_label = QtWidgets.QLabel("En inventario:")
         self.absolute_label.setBuddy(self.absolute_quantity)
@@ -672,8 +684,9 @@ class ProductQuantityDialog(QtWidgets.QDialog):
 
         layout.addWidget(make_separator(), 2, 0, 1, 2)
 
-        self.relative_quantity = QtWidgets.QSpinBox()
-        self.relative_quantity.setRange(-1_000_000_000, 1_000_000_000)
+        self.relative_quantity = DecimalSpinBox()
+        self.relative_quantity.setMaximum(MAX_SAFE_DOUBLE)
+        self.relative_quantity.setDecimals(3)
 
         self.relative_label = QtWidgets.QLabel("Ingresar/Egresar:")
         self.relative_label.setBuddy(self.relative_quantity)
@@ -716,22 +729,22 @@ class ProductQuantityDialog(QtWidgets.QDialog):
 
         query.next()
         name = query.value(0)
-        quantity = query.value(1)
+        quantity = Decimal(query.value(1)) / QUANTITY_FACTOR
 
         self.product_name.setText(f"Existencias de:\n{name}")
         self.stored_quantity = quantity
 
-        self.absolute_quantity.setValue(quantity)
-        self.relative_quantity.setMinimum(-quantity)
+        self.absolute_quantity.setValue(float(quantity))
+        self.relative_quantity.setMinimum(-float(quantity))
 
     @QtCore.Slot()
     def on_reset(self):
         self.relative_quantity.setValue(0)
-        self.absolute_quantity.setValue(self.stored_quantity)
+        self.absolute_quantity.setValue(float(self.stored_quantity))
 
     @QtCore.Slot()
     def accept(self):
-        quantity = self.absolute_quantity.value()
+        quantity = self.absolute_quantity.decimal_value()
 
         query = QtSql.QSqlQuery()
         query.prepare("""\
@@ -739,7 +752,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         """)
 
         query.bindValue(":product", self.product_id)
-        query.bindValue(":quantity", quantity)
+        query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
         if not query.exec():
             print(query.lastError())
@@ -749,17 +762,21 @@ class ProductQuantityDialog(QtWidgets.QDialog):
 
     @QtCore.Slot()
     def apply_absolute(self) -> None:
-        absolute_quantity = self.absolute_quantity.value()
+        absolute_quantity = self.absolute_quantity.decimal_value()
 
-        with QtCore.QSignalBlocker(self.absolute_quantity):
-            self.relative_quantity.setValue(absolute_quantity - self.stored_quantity)
+        with QtCore.QSignalBlocker(self.relative_quantity):
+            self.relative_quantity.setValue(
+                float(absolute_quantity - self.stored_quantity)
+            )
 
     @QtCore.Slot()
     def apply_relative(self) -> None:
-        relative_quantity = self.relative_quantity.value()
+        relative_quantity = self.relative_quantity.decimal_value()
 
-        with QtCore.QSignalBlocker(self.relative_quantity):
-            self.absolute_quantity.setValue(self.stored_quantity + relative_quantity)
+        with QtCore.QSignalBlocker(self.absolute_quantity):
+            self.absolute_quantity.setValue(
+                float(self.stored_quantity + relative_quantity)
+            )
 
 
 class InventoryProductActions(QtWidgets.QWidget):
@@ -842,7 +859,7 @@ class InventoryProductActions(QtWidgets.QWidget):
         query.next()
 
         name = query.value(0)
-        available = query.value(1)
+        available = Decimal(query.value(1)) / QUANTITY_FACTOR
         in_cart = query.value(2)
 
         if in_cart:
@@ -856,13 +873,16 @@ class InventoryProductActions(QtWidgets.QWidget):
             )
             return
 
-        quantity, ok = QtWidgets.QInputDialog.getInt(
+        avail_str = QtCore.QLocale().toString(float(available), "f", FP_SHORTEST)
+
+        quantity, ok = QtWidgets.QInputDialog.getDouble(
             self,
             "Agregar al carrito",
-            "Unidades para agregar al carrito:",
-            in_cart,
+            f"Unidades para agregar al carrito:\nDisponibles: {avail_str}",
             1,
-            available,
+            0.001,
+            float(available),
+            3,
         )
 
         if ok:
@@ -873,7 +893,7 @@ class InventoryProductActions(QtWidgets.QWidget):
             """)
 
             query.bindValue(":product", self.product_id)
-            query.bindValue(":quantity", quantity)
+            query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
             if not query.exec():
                 print(query.lastError())

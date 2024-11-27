@@ -3,7 +3,13 @@ from decimal import Decimal
 from PySide6 import QtCore, QtGui, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
-from .common import adjust_value, CURRENCY_SYMBOL, CURRENCY_FACTOR, make_separator
+from .common import (
+    QUANTITY_FACTOR,
+    adjust_value,
+    CURRENCY_SYMBOL,
+    CURRENCY_FACTOR,
+    make_separator,
+)
 
 
 class ReportsWindow(QtWidgets.QDialog):
@@ -88,7 +94,7 @@ class ReportsWindow(QtWidgets.QDialog):
             purchase_value = Decimal(query.value(1)) / CURRENCY_FACTOR
             sell_currency = query.value(2)
             sell_value = Decimal(query.value(3)) / CURRENCY_FACTOR
-            quantity = query.value(4)
+            quantity = Decimal(query.value(4)) / QUANTITY_FACTOR
 
             total_cost_VED += (
                 adjust_value(purchase_currency, "VED", purchase_value) * quantity

@@ -14,6 +14,9 @@ CURRENCY_SYMBOL = {
 }
 
 CURRENCY_FACTOR = 100
+QUANTITY_FACTOR = 1000
+
+FP_SHORTEST = QtCore.QLocale.FloatingPointPrecisionOption.FloatingPointShortest
 
 
 class DecimalSpinBox(QtWidgets.QDoubleSpinBox):

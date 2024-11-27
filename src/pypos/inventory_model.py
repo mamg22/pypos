@@ -6,7 +6,13 @@ from PySide6 import QtCore, QtGui, QtSql
 from PySide6.QtCore import Qt
 from unidecode import unidecode
 
-from .common import CURRENCY_SYMBOL, CURRENCY_FACTOR, adjust_value
+from .common import (
+    CURRENCY_SYMBOL,
+    CURRENCY_FACTOR,
+    QUANTITY_FACTOR,
+    adjust_value,
+    FP_SHORTEST,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,8 +21,8 @@ class Product:
     name: str
     sell_currency: str
     sell_value: Decimal
-    quantity: int
-    in_cart: int | None
+    quantity: Decimal
+    in_cart: Decimal | None
 
 
 class InventoryModel(QtCore.QAbstractTableModel):
@@ -132,6 +138,12 @@ class InventoryModel(QtCore.QAbstractTableModel):
                 query.value(i) for i in range(n_recs)
             )
             sell_value = Decimal(int_sell_value) / CURRENCY_FACTOR
+            quantity = Decimal(quantity) / QUANTITY_FACTOR
+
+            if in_cart:
+                in_cart = Decimal(in_cart) / QUANTITY_FACTOR
+            else:
+                in_cart = None
 
             product = Product(
                 row_id, name, sell_currency, sell_value, quantity, in_cart
@@ -192,9 +204,19 @@ class InventoryModel(QtCore.QAbstractTableModel):
                 case 0:
                     return product.name
                 case 1:
+                    locale = QtCore.QLocale()
+
+                    quantity = locale.toString(
+                        float(product.quantity), "f", FP_SHORTEST
+                    )
+
                     if product.in_cart:
-                        return f"({product.in_cart}) {product.quantity}"
-                    return product.quantity
+                        in_cart = locale.toString(
+                            float(product.in_cart), "f", FP_SHORTEST
+                        )
+                        return f"({in_cart}) {quantity}"
+
+                    return quantity
                 case 2:
                     locale = QtCore.QLocale()
                     return locale.toCurrencyString(
@@ -267,6 +289,12 @@ class InventoryModel(QtCore.QAbstractTableModel):
                 query.value(i) for i in range(n_recs)
             )
             sell_value = Decimal(int_sell_value) / CURRENCY_FACTOR
+            quantity = Decimal(quantity) / QUANTITY_FACTOR
+
+            if in_cart:
+                in_cart = Decimal(in_cart) / QUANTITY_FACTOR
+            else:
+                in_cart = None
 
             product = Product(
                 row_id, name, sell_currency, sell_value, quantity, in_cart

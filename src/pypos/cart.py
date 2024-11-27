@@ -3,7 +3,13 @@ from decimal import Decimal
 from PySide6 import QtCore, QtGui, QtSql, QtWidgets
 from PySide6.QtCore import Qt
 
-from .common import adjust_value, CURRENCY_SYMBOL, CURRENCY_FACTOR
+from .common import (
+    FP_SHORTEST,
+    QUANTITY_FACTOR,
+    adjust_value,
+    CURRENCY_SYMBOL,
+    CURRENCY_FACTOR,
+)
 
 SB = QtWidgets.QMessageBox.StandardButton
 
@@ -78,6 +84,7 @@ class CartTable(QtWidgets.QTableWidget):
                 query.value(i) for i in range(query.record().count())
             )
             sell_value = Decimal(int_sell_value) / CURRENCY_FACTOR
+            quantity = Decimal(quantity) / QUANTITY_FACTOR
 
             base_item = QtWidgets.QTableWidgetItem()
             base_item.setFlags(row_flags)
@@ -87,7 +94,7 @@ class CartTable(QtWidgets.QTableWidget):
             name_item.setText(name)
 
             quantity_item = base_item.clone()
-            quantity_item.setText(str(quantity))
+            quantity_item.setText(locale.toString(float(quantity), "f", FP_SHORTEST))
             quantity_item.setTextAlignment(number_align)
 
             currency_symbol = CURRENCY_SYMBOL[sell_currency] + " "
@@ -196,7 +203,7 @@ class CartTotals(QtWidgets.QFrame):
         while query.next():
             sell_currency = query.value(0)
             sell_value = Decimal(query.value(1)) / CURRENCY_FACTOR
-            quantity = query.value(2)
+            quantity = Decimal(query.value(2)) / QUANTITY_FACTOR
 
             total_VED += adjust_value(sell_currency, "VED", sell_value * quantity)
             total_USD += adjust_value(sell_currency, "USD", sell_value * quantity)
@@ -369,16 +376,17 @@ class CartActions(QtWidgets.QWidget):
         query.next()
 
         name = query.value(0)
-        available = query.value(1)
-        in_cart = query.value(2)
+        available = Decimal(query.value(1)) / QUANTITY_FACTOR
+        in_cart = Decimal(query.value(2)) / QUANTITY_FACTOR
 
-        quantity, ok = QtWidgets.QInputDialog.getInt(
+        quantity, ok = QtWidgets.QInputDialog.getDouble(
             self,
             "Cambiar unidades",
             "Unidades de este producto:",
-            in_cart,
-            1,
-            available,
+            float(in_cart),
+            0.001,
+            float(available),
+            decimals=3,
         )
 
         if ok:
@@ -387,7 +395,7 @@ class CartActions(QtWidgets.QWidget):
             )
 
             query.bindValue(":product", self.current_id)
-            query.bindValue(":quantity", quantity)
+            query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
             if not query.exec():
                 print(query.lastError())
