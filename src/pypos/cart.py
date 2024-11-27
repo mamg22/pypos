@@ -30,12 +30,13 @@ class CartTable(QtWidgets.QTableWidget):
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.Fixed
-        )
-        self.horizontalHeader().setSectionResizeMode(
-            0, QtWidgets.QHeaderView.ResizeMode.Stretch
-        )
+
+        h_header = self.horizontalHeader()
+
+        h_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+        h_header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Stretch)
+        h_header.setMinimumSectionSize(h_header.defaultSectionSize())
+
         self.verticalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )

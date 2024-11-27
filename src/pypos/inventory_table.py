@@ -25,8 +25,9 @@ class InventoryTable(QtWidgets.QWidget):
 
         h_header = self.table.horizontalHeader()
 
-        h_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
+        h_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         h_header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Stretch)
+        h_header.setMinimumSectionSize(h_header.defaultSectionSize())
 
         self.table.verticalHeader().hide()
 
