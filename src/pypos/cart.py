@@ -73,10 +73,10 @@ class CartTable(QtWidgets.QTableWidget):
 
         for row_num in range(n_rows):
             query.next()
-            row_id, name, quantity, sell_currency, int_sell_value = (
+            row_id, name, quantity, sell_currency, sell_value = (
                 query.value(i) for i in range(query.record().count())
             )
-            sell_value = Decimal(int_sell_value) / 100
+            sell_value = Decimal(sell_value)
 
             base_item = QtWidgets.QTableWidgetItem()
             base_item.setFlags(row_flags)
@@ -203,7 +203,7 @@ class CartTotals(QtWidgets.QFrame):
 
         while query.next():
             sell_currency = query.value(0)
-            sell_value = Decimal(query.value(1)) / 100
+            sell_value = Decimal(query.value(1))
             quantity = query.value(2)
 
             total_VED += adjust_value(sell_currency, "VED", sell_value * quantity)
