@@ -85,9 +85,9 @@ class ReportsWindow(QtWidgets.QDialog):
 
         while query.next():
             purchase_currency = query.value(0)
-            purchase_value = Decimal(query.value(1))
+            purchase_value = Decimal(query.value(1)) / 100
             sell_currency = query.value(2)
-            sell_value = Decimal(query.value(3))
+            sell_value = Decimal(query.value(3)) / 100
             quantity = query.value(4)
 
             total_cost_VED += (

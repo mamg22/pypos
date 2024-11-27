@@ -133,11 +133,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.close()
 
 
-# purchase and sell value are TEXT because they're stored as the
-# string representation of the decimal value used in python
-# I initialy used INTEGER cents, but I just ended up turning them
-# into decimals and dividing as soon as I got them from the db
-# and didn't use them in the queries themselves other than fetching
 SCHEMA: list[str] = [
     "PRAGMA foreign_keys = on;",
     """\
@@ -146,11 +141,11 @@ CREATE TABLE IF NOT EXISTS Products (
     name TEXT NOT NULL UNIQUE,
     name_simplified TEXT NOT NULL UNIQUE,
     purchase_currency TEXT NOT NULL,
-    purchase_value TEXT NOT NULL,
+    purchase_value INTEGER NOT NULL,
     sell_currency TEXT NOT NULL,
-    sell_value TEXT NOT NULL,
+    sell_value INTEGER NOT NULL,
     last_update INTEGER NOT NULL DEFAULT (unixepoch())
-) STRICT;
+);
 """,
     """\
 CREATE TABLE IF NOT EXISTS Inventory (
@@ -158,7 +153,7 @@ CREATE TABLE IF NOT EXISTS Inventory (
     quantity INTEGER NOT NULL,
     FOREIGN KEY (product) REFERENCES Products(id)
         ON DELETE CASCADE
-) STRICT;
+);
 """,
     """\
 CREATE TABLE IF NOT EXISTS Cart (
@@ -166,7 +161,7 @@ CREATE TABLE IF NOT EXISTS Cart (
     quantity INTEGER NOT NULL,
     FOREIGN KEY (product) REFERENCES Products(id)
         ON DELETE RESTRICT
-) STRICT;
+);
 """,
 ]
 

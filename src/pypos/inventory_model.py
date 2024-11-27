@@ -131,7 +131,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
             row_id, name, quantity, sell_currency, int_sell_value, in_cart = (
                 query.value(i) for i in range(n_recs)
             )
-            sell_value = Decimal(int_sell_value)
+            sell_value = Decimal(int_sell_value) / 100
 
             product = Product(
                 row_id, name, sell_currency, sell_value, quantity, in_cart
@@ -266,7 +266,7 @@ class InventoryModel(QtCore.QAbstractTableModel):
             row_id, name, quantity, sell_currency, int_sell_value, in_cart = (
                 query.value(i) for i in range(n_recs)
             )
-            sell_value = Decimal(int_sell_value)
+            sell_value = Decimal(int_sell_value) / 100
 
             product = Product(
                 row_id, name, sell_currency, sell_value, quantity, in_cart
