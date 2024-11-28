@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 from PySide6 import QtCore, QtGui, QtSql
 from PySide6.QtCore import Qt
@@ -71,6 +71,9 @@ class InventoryModel(QtCore.QAbstractTableModel):
         self.id_index_map = {}
         self.query = None
         self.result_size = 0
+
+        self.cart_icon_dark = QtGui.QIcon(":/assets/Cart-64-dark.png")
+        self.cart_icon_light = QtGui.QIcon(":/assets/Cart-64-light.png")
 
         self.load_data()
 
@@ -240,6 +243,14 @@ class InventoryModel(QtCore.QAbstractTableModel):
 
         elif role == IDR.BackgroundRole and product.in_cart:
             return QtGui.QBrush(QtGui.QPalette().alternateBase().color().darker(105))
+
+        elif role == IDR.DecorationRole and index.column() == 1 and product.in_cart:
+            app = cast(QtGui.QGuiApplication, QtGui.QGuiApplication.instance())
+
+            if app.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+                return self.cart_icon_light
+            else:
+                return self.cart_icon_dark
 
         elif role == IDR.TextAlignmentRole:
             align = Qt.AlignmentFlag.AlignVCenter

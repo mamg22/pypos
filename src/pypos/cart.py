@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import cast
 
 from PySide6 import QtCore, QtGui, QtSql, QtWidgets
 from PySide6.QtCore import Qt
@@ -430,7 +431,13 @@ class CartWidget(QtWidgets.QWidget):
         self.cart_totals = CartTotals()
         self.cart_actions = CartActions()
 
-        self.cart_icon_image = QtGui.QPixmap(":/assets/Cart.png")
+        app = cast(QtGui.QGuiApplication, QtGui.QGuiApplication.instance())
+
+        if app.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+            self.cart_icon_image = QtGui.QPixmap(":/assets/Cart-512-light.png")
+        else:
+            self.cart_icon_image = QtGui.QPixmap(":/assets/Cart-512-dark.png")
+
         self.cart_icon = QtWidgets.QLabel()
         self.cart_icon.setPixmap(self.cart_icon_image)
         self.cart_icon.setMaximumSize(60, 60)

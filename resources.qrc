@@ -1,6 +1,9 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
     <qresource>
-        <file>assets/Cart.png</file>
+        <file>assets/Cart-512-light.png</file>
+        <file>assets/Cart-512-dark.png</file>
+        <file>assets/Cart-64-light.png</file>
+        <file>assets/Cart-64-dark.png</file>
     </qresource>
 </RCC>
