@@ -28,4 +28,6 @@ artifacts = [
 path = "src/scripts/build_hook.py"
 
 [dependency-groups]
-dev = []
+dev = [
+    "pyinstaller>=6.11.1",
+]
