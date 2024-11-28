@@ -7,6 +7,7 @@ from PySide6 import QtCore, QtWidgets, QtSql
 
 from . import inventory, settings
 from .cart import CartWidget
+from .help import HelpDialog
 from .reports import ReportsWindow
 from . import resources as resources  # Only for the side effects
 
@@ -53,8 +54,17 @@ class MainWindow(QtWidgets.QMainWindow):
         settings_action = options_menu.addAction("&Configuración...")
         settings_action.triggered.connect(self.show_settings_window)
 
+        help_menu = QtWidgets.QMenu("A&yuda")
+        general_help_action = help_menu.addAction("&General")
+        general_help_action.triggered.connect(self.show_general_help)
+        inventory_help_action = help_menu.addAction("&Inventario")
+        inventory_help_action.triggered.connect(self.show_inventory_help)
+        cart_help_action = help_menu.addAction("&Carrito")
+        cart_help_action.triggered.connect(self.show_cart_help)
+
         self.menuBar().addMenu(app_menu)
         self.menuBar().addMenu(options_menu)
+        self.menuBar().addMenu(help_menu)
 
         self.inventory.cart_item.connect(self.cart.refresh)
         self.inventory.view_in_cart.connect(self.cart.view_in_cart)
@@ -132,6 +142,18 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def bye(self):
         self.close()
+
+    @QtCore.Slot()
+    def show_inventory_help(self) -> None:
+        HelpDialog.inventory_help()
+
+    @QtCore.Slot()
+    def show_cart_help(self) -> None:
+        HelpDialog.cart_help()
+
+    @QtCore.Slot()
+    def show_general_help(self) -> None:
+        HelpDialog.general_help()
 
 
 SCHEMA: list[str] = [
