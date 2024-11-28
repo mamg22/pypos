@@ -12,8 +12,10 @@ from .common import (
     DecimalInputDialog,
     DecimalSpinBox,
     MAX_SAFE_DOUBLE,
+    QueryCheckFail,
     adjust_value,
     calculate_margin,
+    checked_query,
     is_product_in_cart,
     CURRENCY_SYMBOL,
     CURRENCY_FACTOR,
@@ -210,12 +212,12 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
     def load_existing_product(self, id: int) -> None:
         query = QtSql.QSqlQuery()
-        query.prepare(self.LOAD_QUERY)
-        query.bindValue(":id", id)
 
-        if not query.exec():
-            print(query.lastError())
-            return
+        with checked_query(query) as check:
+            check(query.prepare(self.LOAD_QUERY))
+            query.bindValue(":id", id)
+
+            check(query.exec())
 
         if query.next():
             name = query.value(0)
@@ -292,47 +294,53 @@ class ProductInfoDialog(QtWidgets.QDialog):
         else:
             query_string = self.INSERT_QUERY
 
-        query.prepare(query_string)
+        try:
+            with checked_query(query) as check:
+                check(query.prepare(query_string))
 
-        query.bindValue(":name", name)
-        query.bindValue(":name_simplified", name_simplified)
-        query.bindValue(":purchase_currency", purchase_currency)
-        query.bindValue(":purchase_value", int(purchase_value * CURRENCY_FACTOR))
-        query.bindValue(":sell_currency", sell_currency)
-        query.bindValue(":sell_value", int(sell_value * CURRENCY_FACTOR))
-
-        if is_update:
-            query.bindValue(":id", self.product_id)
-
-        if not query.exec():
-            # 2067 SQLITE_CONSTRAINT_UNIQUE
-            if query.lastError().nativeErrorCode() == "2067":
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Duplicado",
-                    "Ya existe un producto registrado con un nombre similar",
+                query.bindValue(":name", name)
+                query.bindValue(":name_simplified", name_simplified)
+                query.bindValue(":purchase_currency", purchase_currency)
+                query.bindValue(
+                    ":purchase_value", int(purchase_value * CURRENCY_FACTOR)
                 )
-            else:
-                print(query.lastError())
+                query.bindValue(":sell_currency", sell_currency)
+                query.bindValue(":sell_value", int(sell_value * CURRENCY_FACTOR))
 
-            db.rollback()
-            return
+                if is_update:
+                    query.bindValue(":id", self.product_id)
 
-        if is_update:
-            query.prepare(
-                "UPDATE Inventory SET quantity = :quantity WHERE product = :id"
-            )
-        else:
-            self.product_id = query.lastInsertId()
-            query.prepare(
-                "INSERT INTO Inventory(product, quantity) VALUES (:id, :quantity)"
-            )
+                if not query.exec():
+                    # 2067 SQLITE_CONSTRAINT_UNIQUE
+                    if query.lastError().nativeErrorCode() == "2067":
+                        QtWidgets.QMessageBox.information(
+                            self,
+                            "Duplicado",
+                            "Ya existe un producto registrado con un nombre similar",
+                        )
+                    else:
+                        check(False)
 
-        query.bindValue(":id", self.product_id)
-        query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
+                    db.rollback()
+                    return
 
-        if not query.exec():
-            print(query.lastError())
+                if is_update:
+                    check(
+                        query.prepare(
+                            "UPDATE Inventory SET quantity = :quantity WHERE product = :id"
+                        )
+                    )
+                else:
+                    self.product_id = query.lastInsertId()
+                    query.prepare(
+                        "INSERT INTO Inventory(product, quantity) VALUES (:id, :quantity)"
+                    )
+
+                query.bindValue(":id", self.product_id)
+                query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
+
+                check(query.exec())
+        except QueryCheckFail:
             db.rollback()
             return
 
@@ -580,15 +588,12 @@ class ProductPreviewWidget(QtWidgets.QFrame):
         self.show()
 
         product_query = QtSql.QSqlQuery()
-        prepared = product_query.prepare(self.PRODUCT_QUERY)
 
-        if not prepared:
-            print(product_query.lastError())
+        with checked_query(product_query) as check:
+            check(product_query.prepare(self.PRODUCT_QUERY))
+            product_query.bindValue(":id", id)
 
-        product_query.bindValue(":id", id)
-
-        if not product_query.exec():
-            print(product_query.lastError())
+            check(product_query.exec())
 
         if product_query.next():
             (
@@ -725,21 +730,24 @@ class ProductQuantityDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def load_from_stored(self):
         query = QtSql.QSqlQuery()
-        query.prepare("""\
-        SELECT name, quantity
-        FROM Inventory i
-            INNER JOIN Products p
-            ON i.product = p.id
-        WHERE product = :product
-        """)
 
-        query.bindValue(":product", self.product_id)
+        with checked_query(query) as check:
+            check(
+                query.prepare("""\
+            SELECT name, quantity
+            FROM Inventory i
+                INNER JOIN Products p
+                ON i.product = p.id
+            WHERE product = :product
+            """)
+            )
 
-        if not query.exec():
-            print(query.lastError())
-            return
+            query.bindValue(":product", self.product_id)
 
-        query.next()
+            check(query.exec())
+
+            check(query.next())
+
         name = query.value(0)
         quantity = Decimal(query.value(1)) / QUANTITY_FACTOR
 
@@ -759,16 +767,17 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         quantity = self.absolute_quantity.decimal_value()
 
         query = QtSql.QSqlQuery()
-        query.prepare("""\
-        UPDATE Inventory SET quantity = :quantity WHERE product = :product
-        """)
+        with checked_query(query) as check:
+            check(
+                query.prepare("""\
+            UPDATE Inventory SET quantity = :quantity WHERE product = :product
+            """)
+            )
 
-        query.bindValue(":product", self.product_id)
-        query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
+            query.bindValue(":product", self.product_id)
+            query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
-        if not query.exec():
-            print(query.lastError())
-            return
+            check(query.exec())
 
         super().accept()
 
@@ -853,22 +862,24 @@ class InventoryProductActions(QtWidgets.QWidget):
             return
 
         query = QtSql.QSqlQuery()
-        query.prepare("""\
-        SELECT name, i.quantity as available, coalesce(c.quantity, 0) as in_cart
-        FROM Products p
-            INNER JOIN Inventory i
-            ON i.product = p.id
-            LEFT JOIN Cart c
-            ON c.product = p.id
-        WHERE p.id = :id
-        """)
 
-        query.bindValue(":id", self.product_id)
+        with checked_query(query) as check:
+            check(
+                query.prepare("""\
+            SELECT name, i.quantity as available, coalesce(c.quantity, 0) as in_cart
+            FROM Products p
+                INNER JOIN Inventory i
+                ON i.product = p.id
+                LEFT JOIN Cart c
+                ON c.product = p.id
+            WHERE p.id = :id
+            """)
+            )
 
-        if not query.exec():
-            print(query.lastError())
-            return
-        query.next()
+            query.bindValue(":id", self.product_id)
+
+            check(query.exec())
+            check(query.next())
 
         name = query.value(0)
         available = Decimal(query.value(1)) / QUANTITY_FACTOR
@@ -899,18 +910,19 @@ class InventoryProductActions(QtWidgets.QWidget):
         )
 
         if ok:
-            query.prepare("""\
-            INSERT INTO Cart(product, quantity) VALUES (:product, :quantity)
-            ON CONFLICT(product)
-                DO UPDATE SET quantity = :quantity
-            """)
+            with checked_query(query) as check:
+                check(
+                    query.prepare("""\
+                INSERT INTO Cart(product, quantity) VALUES (:product, :quantity)
+                ON CONFLICT(product)
+                    DO UPDATE SET quantity = :quantity
+                """)
+                )
 
-            query.bindValue(":product", self.product_id)
-            query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
+                query.bindValue(":product", self.product_id)
+                query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
-            if not query.exec():
-                print(query.lastError())
-                return
+                check(query.exec())
 
             self.cart_item.emit(self.product_id, quantity)
 
@@ -943,13 +955,14 @@ class InventoryProductActions(QtWidgets.QWidget):
 
             if confirm == StandardButton.Yes:
                 query = QtSql.QSqlQuery()
-                query.prepare("DELETE FROM Products WHERE id = :id")
-                query.bindValue(":id", self.product_id)
 
-                if not query.exec():
-                    print(query.lastError())
-                else:
-                    self.deleted.emit()
+                with checked_query(query) as check:
+                    check(query.prepare("DELETE FROM Products WHERE id = :id"))
+                    query.bindValue(":id", self.product_id)
+
+                    check(query.exec())
+
+                self.deleted.emit()
 
     @QtCore.Slot()
     def view_in_cart_handler(self) -> None:

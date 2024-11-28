@@ -5,6 +5,8 @@ from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
 
+from pypos.common import checked_query
+
 from . import inventory, settings
 from .cart import CartWidget
 from .help import HelpDialog
@@ -192,8 +194,8 @@ CREATE TABLE IF NOT EXISTS Cart (
 def build_database() -> None:
     for statement in SCHEMA:
         schema_query = QtSql.QSqlQuery()
-        if not schema_query.exec(statement):
-            print(schema_query.lastError().text())
+        with checked_query(schema_query) as check:
+            check(schema_query.exec(statement))
 
 
 def main() -> None:

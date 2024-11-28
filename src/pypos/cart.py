@@ -10,6 +10,7 @@ from .common import (
     adjust_value,
     CURRENCY_SYMBOL,
     CURRENCY_FACTOR,
+    checked_query,
 )
 
 SB = QtWidgets.QMessageBox.StandardButton
@@ -58,11 +59,9 @@ class CartTable(QtWidgets.QTableWidget):
         db = QtSql.QSqlDatabase.database()
         query = QtSql.QSqlQuery()
 
-        query.prepare(self.CART_QUERY)
-
-        if not query.exec():
-            print(query.lastError())
-            return
+        with checked_query(query) as check:
+            check(query.prepare(self.CART_QUERY))
+            check(query.exec())
 
         if db.driver().hasFeature(QtSql.QSqlDriver.DriverFeature.QuerySize):
             n_rows = query.size()
@@ -187,16 +186,17 @@ class CartTotals(QtWidgets.QFrame):
     @QtCore.Slot()
     def refresh(self) -> None:
         query = QtSql.QSqlQuery()
-        query.prepare("""\
-        SELECT sell_currency, sell_value, quantity
-        FROM Cart c
-            INNER JOIN Products p
-            ON c.product = p.id
-        """)
 
-        if not query.exec():
-            print(query.lastError())
-            raise ValueError()
+        with checked_query(query) as check:
+            check(
+                query.prepare("""\
+            SELECT sell_currency, sell_value, quantity
+            FROM Cart c
+                INNER JOIN Products p
+                ON c.product = p.id
+            """)
+            )
+            check(query.exec())
 
         total_VED = Decimal(0)
         total_USD = Decimal(0)
@@ -291,19 +291,18 @@ class CartActions(QtWidgets.QWidget):
             return
 
         query = QtSql.QSqlQuery()
-        query.prepare("""\
-        UPDATE Inventory AS i SET quantity = i.quantity - c.quantity
-        FROM Cart c
-            WHERE i.product = c.product
-        """)
 
-        if not query.exec():
-            print(query.lastError())
-            return
+        with checked_query(query) as check:
+            check(
+                query.prepare("""\
+            UPDATE Inventory AS i SET quantity = i.quantity - c.quantity
+            FROM Cart c
+                WHERE i.product = c.product
+            """)
+            )
+            check(query.exec())
 
-        if not query.exec("DELETE FROM Cart"):
-            print(query.lastError())
-            return
+            check(query.exec("DELETE FROM Cart"))
 
         self.sale_completed.emit()
 
@@ -321,9 +320,8 @@ class CartActions(QtWidgets.QWidget):
 
         query = QtSql.QSqlQuery()
 
-        if not query.exec("DELETE FROM Cart"):
-            print(query.lastError())
-            return
+        with checked_query(query) as check:
+            check(query.exec("DELETE FROM Cart"))
 
         self.sale_discarded.emit()
 
@@ -343,12 +341,12 @@ class CartActions(QtWidgets.QWidget):
             return
 
         query = QtSql.QSqlQuery()
-        query.prepare("DELETE FROM Cart WHERE product = :product")
-        query.bindValue(":product", self.current_id)
 
-        if not query.exec():
-            print(query.lastError())
-            return
+        with checked_query(query) as check:
+            check(query.prepare("DELETE FROM Cart WHERE product = :product"))
+            query.bindValue(":product", self.current_id)
+
+            check(query.exec())
 
         self.item_deleted.emit(self.current_id)
         self.set_current_id(None)
@@ -359,22 +357,25 @@ class CartActions(QtWidgets.QWidget):
             return
 
         query = QtSql.QSqlQuery()
-        query.prepare("""\
-        SELECT p.name, i.quantity as available, coalesce(c.quantity, 0) as in_cart
-        FROM Cart c
-            INNER JOIN Products p
-            ON c.product = p.id
-            INNER JOIN Inventory i
-            USING (product)
-        WHERE c.product = :id
-        """)
 
-        query.bindValue(":id", self.current_id)
+        with checked_query(query) as check:
+            check(
+                query.prepare("""\
+            SELECT p.name, i.quantity as available, coalesce(c.quantity, 0) as in_cart
+            FROM Cart c
+                INNER JOIN Products p
+                ON c.product = p.id
+                INNER JOIN Inventory i
+                USING (product)
+            WHERE c.product = :id
+            """)
+            )
 
-        if not query.exec():
-            print(query.lastError())
-            return
-        query.next()
+            query.bindValue(":id", self.current_id)
+
+            check(query.exec())
+
+            check(query.next())
 
         name = query.value(0)
         available = Decimal(query.value(1)) / QUANTITY_FACTOR
@@ -395,16 +396,17 @@ class CartActions(QtWidgets.QWidget):
         )
 
         if ok:
-            query.prepare(
-                "UPDATE Cart SET quantity = :quantity WHERE product = :product"
-            )
+            with checked_query(query) as check:
+                check(
+                    query.prepare(
+                        "UPDATE Cart SET quantity = :quantity WHERE product = :product"
+                    )
+                )
 
-            query.bindValue(":product", self.current_id)
-            query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
+                query.bindValue(":product", self.current_id)
+                query.bindValue(":quantity", int(quantity * QUANTITY_FACTOR))
 
-            if not query.exec():
-                print(query.lastError())
-                return
+                check(query.exec())
 
             self.item_updated.emit(self.current_id)
 

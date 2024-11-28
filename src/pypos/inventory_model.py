@@ -12,6 +12,7 @@ from .common import (
     QUANTITY_FACTOR,
     adjust_value,
     FP_SHORTEST,
+    checked_query,
 )
 
 
@@ -80,19 +81,19 @@ class InventoryModel(QtCore.QAbstractTableModel):
             self.id_index_map.clear()
 
             query = QtSql.QSqlQuery()
+            with checked_query(query) as check:
+                query_str = "SELECT count(id) FROM Products "
 
-            query_str = "SELECT count(id) FROM Products "
+                if self.query is not None:
+                    query_str += self.WHERE_CLAUSE
 
-            if self.query is not None:
-                query_str += self.WHERE_CLAUSE
+                check(query.prepare(query_str))
+                query.bindValue(":name_simplified", self.query)
 
-            query.prepare(query_str)
-            query.bindValue(":name_simplified", self.query)
+                check(query.exec())
+                check(query.next())
 
-            query.exec()
-            query.next()
-
-            self.result_size = query.value(0)
+                self.result_size = query.value(0)
 
             self.fetchMore(QtCore.QModelIndex())
         finally:
@@ -124,10 +125,11 @@ class InventoryModel(QtCore.QAbstractTableModel):
         query_str += self.ORDER_CLAUSE
         query_str += f"LIMIT {to_fetch} OFFSET {start}"
 
-        query.prepare(query_str)
-        query.bindValue(":name_simplified", self.query)
+        with checked_query(query) as check:
+            check(query.prepare(query_str))
+            query.bindValue(":name_simplified", self.query)
 
-        query.exec()
+            check(query.exec())
 
         n_recs = query.record().count()
 
@@ -277,10 +279,12 @@ class InventoryModel(QtCore.QAbstractTableModel):
 
     def update_item(self, product_id: int):
         query = QtSql.QSqlQuery()
-        query.prepare(self.LOAD_QUERY + " WHERE id = :id")
-        query.bindValue(":id", product_id)
 
-        query.exec()
+        with checked_query(query) as check:
+            check(query.prepare(self.LOAD_QUERY + " WHERE id = :id"))
+            query.bindValue(":id", product_id)
+
+            check(query.exec())
 
         n_recs = query.record().count()
 

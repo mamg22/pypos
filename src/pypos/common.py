@@ -1,5 +1,7 @@
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from decimal import Decimal, DecimalException
+import logging
 from sys import float_info
 from typing import Any, cast
 
@@ -126,13 +128,13 @@ def calculate_margin(sell_value: Decimal, purchase_value: Decimal) -> Decimal:
 
 def is_product_in_cart(product_id: int) -> bool:
     query = QtSql.QSqlQuery()
-    query.prepare("SELECT count(product) FROM Cart WHERE product = :product")
-    query.bindValue(":product", product_id)
 
-    if not query.exec():
-        print(query.lastError())
-        return False
-    query.next()
+    with checked_query(query) as check:
+        check(query.prepare("SELECT count(product) FROM Cart WHERE product = :product"))
+        query.bindValue(":product", product_id)
+
+        check(query.exec())
+        check(query.next())
 
     return query.value(0) != 0
 
@@ -171,3 +173,33 @@ def waiting_cursor():
             app.restoreOverrideCursor()
     else:
         raise RuntimeError("Could not get application instance")
+
+
+logger = logging.getLogger(__name__)
+
+
+class QueryCheckFail(Exception):
+    pass
+
+
+@contextmanager
+def checked_query(
+    query: QtSql.QSqlQuery,
+) -> Generator[Callable[[bool], None], None, None]:
+    def checker(result: bool) -> None:
+        if not result:
+            print(result)
+            err = query.lastError()
+            code = err.nativeErrorCode()
+            err_type = err.type()
+            text = err.text()
+            failed_query = query.lastQuery()
+
+            logger.error(f"Query Error: {code=} {err_type=}\n{text=}\n{failed_query=}")
+
+            raise QueryCheckFail(query)
+
+    try:
+        yield checker
+    finally:
+        pass

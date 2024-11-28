@@ -8,6 +8,7 @@ from .common import (
     adjust_value,
     CURRENCY_SYMBOL,
     CURRENCY_FACTOR,
+    checked_query,
     make_separator,
 )
 
@@ -75,16 +76,15 @@ class ReportsWindow(QtWidgets.QDialog):
     def load_report(self) -> None:
         query = QtSql.QSqlQuery()
 
-        ok = query.exec("""\
-        SELECT purchase_currency, purchase_value, sell_currency, sell_value, quantity
-        FROM Products p
-            INNER JOIN Inventory i
-            ON p.id = i.product
-        """)
-
-        if not ok:
-            print(query.lastError())
-            return
+        with checked_query(query) as check:
+            check(
+                query.exec("""\
+            SELECT purchase_currency, purchase_value, sell_currency, sell_value, quantity
+            FROM Products p
+                INNER JOIN Inventory i
+                ON p.id = i.product
+            """)
+            )
 
         total_cost_VED = Decimal(0)
         total_value_VED = Decimal(0)
