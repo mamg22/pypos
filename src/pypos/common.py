@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from decimal import Decimal, DecimalException
 from sys import float_info
-from typing import cast
+from typing import Any, cast
 
 from PySide6 import QtCore, QtWidgets, QtGui, QtSql
 from PySide6.QtCore import Qt
@@ -23,6 +23,62 @@ class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
     def decimal_value(self) -> Decimal:
         value_text = str(self.value())
         return Decimal(value_text)
+
+    def textFromValue(self, val: float) -> str:
+        locale = QtCore.QLocale()
+        return locale.toString(val, "f", FP_SHORTEST)
+
+
+class DecimalInputDialog(QtWidgets.QDialog):
+    def __init__(self, parent: Any = None):
+        super().__init__(parent)
+
+        self.label = QtWidgets.QLabel()
+
+        self.spinbox = DecimalSpinBox()
+
+        SB = QtWidgets.QDialogButtonBox.StandardButton
+        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel)
+        buttons.button(SB.Ok).setDefault(True)
+
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout = QtWidgets.QVBoxLayout()
+
+        layout.addWidget(self.label)
+        layout.addWidget(self.spinbox)
+        layout.addWidget(buttons)
+
+        self.setLayout(layout)
+
+    @staticmethod
+    def getDecimal(
+        parent: Any,
+        title: str,
+        label: str,
+        value: float = 0,
+        minValue: float = 0,
+        maxValue: float = 2147483647,
+        decimals: int = 3,
+        step: float = 1,
+    ) -> tuple[Decimal, bool]:
+        dialog = DecimalInputDialog()
+
+        dialog.label.setText(label)
+
+        dialog.spinbox.setValue(value)
+        dialog.spinbox.setMinimum(minValue)
+        dialog.spinbox.setMaximum(maxValue)
+        dialog.spinbox.setDecimals(decimals)
+        dialog.spinbox.setSingleStep(step)
+
+        result = dialog.exec()
+
+        if result == DecimalInputDialog.DialogCode.Accepted:
+            return dialog.spinbox.decimal_value(), True
+        else:
+            return Decimal(0), False
 
 
 def adjust_value(

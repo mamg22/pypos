@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from .common import (
     FP_SHORTEST,
     QUANTITY_FACTOR,
+    DecimalInputDialog,
     adjust_value,
     CURRENCY_SYMBOL,
     CURRENCY_FACTOR,
@@ -379,7 +380,7 @@ class CartActions(QtWidgets.QWidget):
         available = Decimal(query.value(1)) / QUANTITY_FACTOR
         in_cart = Decimal(query.value(2)) / QUANTITY_FACTOR
 
-        quantity, ok = QtWidgets.QInputDialog.getDouble(
+        quantity, ok = DecimalInputDialog.getDecimal(
             self,
             "Cambiar unidades",
             "Unidades de este producto:",

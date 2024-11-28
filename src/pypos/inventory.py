@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt
 from unidecode import unidecode
 
 from .common import (
+    DecimalInputDialog,
     DecimalSpinBox,
     MAX_SAFE_DOUBLE,
     adjust_value,
@@ -784,7 +785,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 
     deleted = QtCore.Signal()
     edit_requested = QtCore.Signal(int)
-    cart_item = QtCore.Signal(int, int)
+    cart_item = QtCore.Signal(int, Decimal)
     view_in_cart = QtCore.Signal(int)
     product_updated = QtCore.Signal(int)
 
@@ -875,7 +876,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 
         avail_str = QtCore.QLocale().toString(float(available), "f", FP_SHORTEST)
 
-        quantity, ok = QtWidgets.QInputDialog.getDouble(
+        quantity, ok = DecimalInputDialog.getDecimal(
             self,
             "Agregar al carrito",
             f"Unidades para agregar al carrito:\nDisponibles: {avail_str}",
@@ -945,7 +946,7 @@ class InventoryProductActions(QtWidgets.QWidget):
 
 
 class InventoryWidget(QtWidgets.QWidget):
-    cart_item = QtCore.Signal(int, int)
+    cart_item = QtCore.Signal(int, Decimal)
     view_in_cart = QtCore.Signal(int)
     update_item = QtCore.Signal(int)
 
