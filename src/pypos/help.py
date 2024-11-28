@@ -195,7 +195,8 @@ operaciones.
 <p>
 <kbd>Opciones > Configuración...</kbd>: Ajustes varios del funcionamiento de la aplicación;
 puede ajustar el porcentaje de margen de ganancia por defecto que se usará para calcular precios
-de venta, y la moneda por defecto utilizada al marcar precios en nuevos productos.
+de venta, la moneda por defecto utilizada al marcar precios en nuevos productos, y una opción
+para controlar el calculo automático de precios de venta en base al de compra.
 </p>
 <p>
 <kbd>Ayuda</kbd>: Ayuda sobre el uso de la aplicación.
@@ -220,7 +221,7 @@ PRODUCT_HELP = """\
     o actualizar uno existente. Los campos se actualizarán automaticamente según
     los cambios que efectúe, ajustando el valor mostrado. Cambiar el precio de
     compra de un producto sobrescribirá el precio de venta acorde al margen
-    especificado.
+    especificado. Puede activar o desactivar esta función en la configuración.
 </p>
 </html>
 """
