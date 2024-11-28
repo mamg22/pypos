@@ -22,6 +22,7 @@ from .common import (
     settings_group,
     FP_SHORTEST,
 )
+from .help import HelpDialog
 from .inventory_table import InventoryTable
 
 
@@ -184,10 +185,11 @@ class ProductInfoDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
-        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset)
+        buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel | SB.Reset | SB.Help)
 
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        buttons.helpRequested.connect(self.help)
         buttons.button(SB.Reset).clicked.connect(self.on_reset)
 
         layout.addWidget(buttons)
@@ -250,6 +252,10 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
             self.profit_currency.setText(CURRENCY_SYMBOL[self.current_sell_currency])
             self.profit.setValue(float(profit))
+
+    @QtCore.Slot()
+    def help(self):
+        HelpDialog.product_help()
 
     @QtCore.Slot()
     def accept(self):

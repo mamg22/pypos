@@ -49,6 +49,11 @@ class HelpDialog(QtWidgets.QDialog):
         dialog = HelpDialog(GENERAL_HELP)
         dialog.exec()
 
+    @staticmethod
+    def product_help():
+        dialog = HelpDialog(PRODUCT_HELP)
+        dialog.exec()
+
 
 INVENTORY_HELP = """\
 <html>
@@ -203,6 +208,19 @@ de venta, y la moneda por defecto utilizada al marcar precios en nuevos producto
     un producto al carrito desde la vista de Inventario, puede presionar
     <kbd>Alt</kbd> más la tecla <kbd>A</kbd>, cumpliendo la misma función que
     presionar el botón de <kbd>Agregar al Carrito</kbd>.
+</p>
+</html>
+"""
+
+PRODUCT_HELP = """\
+<html>
+<h2>Formulario de producto</h2>
+<p>
+    El formulario de producto permite ingresar la información de un producto nuevo
+    o actualizar uno existente. Los campos se actualizarán automaticamente según
+    los cambios que efectúe, ajustando el valor mostrado. Cambiar el precio de
+    compra de un producto sobrescribirá el precio de venta acorde al margen
+    especificado.
 </p>
 </html>
 """
