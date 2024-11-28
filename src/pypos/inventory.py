@@ -1004,7 +1004,7 @@ class InventoryWidget(QtWidgets.QWidget):
         self.splitter.setChildrenCollapsible(False)
         self.splitter.addWidget(inventory_table)
         self.splitter.addWidget(self.preview_scroller)
-        self.splitter.setSizes([0, 125])
+        self.splitter.setSizes([0, 140])
         self.splitter.setStretchFactor(0, 1)
 
         layout.addWidget(topbar)
