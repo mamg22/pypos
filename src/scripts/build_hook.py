@@ -6,6 +6,9 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class ResourceBuildHook(BuildHookInterface):
+    def dependencies(self) -> list[str]:
+        return ["pyside6-essentials"]
+
     def initialize(self, version: str, build_data: dict[str, Any]) -> None:
         root_path = Path(self.root)
         resource_file = root_path / "resources.qrc"
