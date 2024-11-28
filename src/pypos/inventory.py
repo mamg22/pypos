@@ -196,8 +196,13 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         self.on_reset()
 
+        calc_from_purchase = QtCore.QSettings().value(
+            "calc_from_purchase", True, type=bool
+        )
+
         self.purchase_currency.currentIndexChanged.connect(self.update_purchase_value)
-        self.purchase_value.valueChanged.connect(self.update_from_margin)
+        if calc_from_purchase:
+            self.purchase_value.valueChanged.connect(self.update_from_margin)
         self.margin.valueChanged.connect(self.update_from_margin)
         self.sell_currency.currentIndexChanged.connect(self.adjust_sell_value)
         self.sell_value.valueChanged.connect(self.update_from_sell_value)

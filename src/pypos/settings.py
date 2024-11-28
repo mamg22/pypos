@@ -32,12 +32,18 @@ class SettingsWindow(QtWidgets.QDialog):
             self.default_purchase_currency.addItem(symbol, currency)
             self.default_sell_currency.addItem(symbol, currency)
 
+        self.calc_from_purchase = QtWidgets.QCheckBox()
+
         form_layout.addRow("Margen por defecto:", self.default_margin)
         form_layout.addRow(make_separator())
         form_layout.addRow(
             "Moneda de compra por defecto:", self.default_purchase_currency
         )
         form_layout.addRow("Moneda de venta por defecto", self.default_sell_currency)
+        form_layout.addRow(make_separator())
+        form_layout.addRow(
+            "Calcular precio de venta automaticamente", self.calc_from_purchase
+        )
 
         layout.addLayout(form_layout)
 
@@ -65,6 +71,8 @@ class SettingsWindow(QtWidgets.QDialog):
             )
             settings.setValue("sell_currency", self.default_sell_currency.currentData())
 
+        settings.setValue("calc_from_purchase", self.calc_from_purchase.isChecked())
+
         super().accept()
 
     @QtCore.Slot()
@@ -77,6 +85,9 @@ class SettingsWindow(QtWidgets.QDialog):
                 str, settings.value("purchase_currency", "VED", type=str)
             )
             sell_currency = cast(str, settings.value("sell_currency", "VED", type=str))
+            calc_from_purchase = cast(
+                bool, settings.value("calc_from_purchase", True, type=bool)
+            )
 
             self.default_margin.setValue(float(margin))
             self.default_purchase_currency.setCurrentIndex(
@@ -85,6 +96,7 @@ class SettingsWindow(QtWidgets.QDialog):
             self.default_sell_currency.setCurrentIndex(
                 self.default_sell_currency.findData(sell_currency)
             )
+            self.calc_from_purchase.setChecked(calc_from_purchase)
 
 
 class ExchangeRateWindow(QtWidgets.QDialog):
