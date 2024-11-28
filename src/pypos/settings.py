@@ -85,9 +85,6 @@ class SettingsWindow(QtWidgets.QDialog):
                 str, settings.value("purchase_currency", "VED", type=str)
             )
             sell_currency = cast(str, settings.value("sell_currency", "VED", type=str))
-            calc_from_purchase = cast(
-                bool, settings.value("calc_from_purchase", True, type=bool)
-            )
 
             self.default_margin.setValue(float(margin))
             self.default_purchase_currency.setCurrentIndex(
@@ -96,7 +93,11 @@ class SettingsWindow(QtWidgets.QDialog):
             self.default_sell_currency.setCurrentIndex(
                 self.default_sell_currency.findData(sell_currency)
             )
-            self.calc_from_purchase.setChecked(calc_from_purchase)
+
+        calc_from_purchase = cast(
+            bool, settings.value("calc_from_purchase", True, type=bool)
+        )
+        self.calc_from_purchase.setChecked(calc_from_purchase)
 
 
 class ExchangeRateWindow(QtWidgets.QDialog):
