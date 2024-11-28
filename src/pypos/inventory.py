@@ -173,7 +173,7 @@ class ProductInfoDialog(QtWidgets.QDialog):
 
         form_layout.addRow(make_separator())
 
-        self.quantity = DecimalSpinBox()
+        self.quantity = DecimalSpinBox(format_shortest=True)
         self.quantity.setMaximum(MAX_SAFE_DOUBLE)
         self.quantity.setDecimals(3)
 
@@ -679,7 +679,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.product_name.setTextFormat(Qt.TextFormat.PlainText)
         layout.addWidget(self.product_name, 0, 0, 1, 2)
 
-        self.absolute_quantity = DecimalSpinBox()
+        self.absolute_quantity = DecimalSpinBox(format_shortest=True)
         self.absolute_quantity.setMaximum(MAX_SAFE_DOUBLE)
         self.absolute_quantity.setDecimals(3)
 
@@ -691,7 +691,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
 
         layout.addWidget(make_separator(), 2, 0, 1, 2)
 
-        self.relative_quantity = DecimalSpinBox()
+        self.relative_quantity = DecimalSpinBox(format_shortest=True)
         self.relative_quantity.setMaximum(MAX_SAFE_DOUBLE)
         self.relative_quantity.setDecimals(3)
 
@@ -890,6 +890,7 @@ class InventoryProductActions(QtWidgets.QWidget):
             0.001,
             float(available),
             3,
+            format_shortest=True,
         )
 
         if ok:

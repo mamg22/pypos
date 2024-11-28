@@ -20,22 +20,29 @@ FP_SHORTEST = QtCore.QLocale.FloatingPointPrecisionOption.FloatingPointShortest
 
 
 class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
+    def __init__(self, *args, format_shortest: bool = False, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.format_shortest = format_shortest
+
     def decimal_value(self) -> Decimal:
         value_text = str(self.value())
         return Decimal(value_text)
 
     def textFromValue(self, val: float) -> str:
-        locale = QtCore.QLocale()
-        return locale.toString(val, "f", FP_SHORTEST)
+        if self.format_shortest:
+            locale = QtCore.QLocale()
+            return locale.toString(val, "f", FP_SHORTEST)
+        else:
+            return super().textFromValue(val)
 
 
 class DecimalInputDialog(QtWidgets.QDialog):
-    def __init__(self, parent: Any = None):
+    def __init__(self, parent: Any = None, format_shortest: bool = False):
         super().__init__(parent)
 
         self.label = QtWidgets.QLabel()
 
-        self.spinbox = DecimalSpinBox()
+        self.spinbox = DecimalSpinBox(format_shortest=format_shortest)
 
         SB = QtWidgets.QDialogButtonBox.StandardButton
         buttons = QtWidgets.QDialogButtonBox(SB.Ok | SB.Cancel)
@@ -62,9 +69,11 @@ class DecimalInputDialog(QtWidgets.QDialog):
         maxValue: float = 2147483647,
         decimals: int = 3,
         step: float = 1,
+        format_shortest: bool = False,
     ) -> tuple[Decimal, bool]:
-        dialog = DecimalInputDialog()
+        dialog = DecimalInputDialog(parent, format_shortest)
 
+        dialog.setWindowTitle(title)
         dialog.label.setText(label)
 
         dialog.spinbox.setValue(value)

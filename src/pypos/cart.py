@@ -391,6 +391,7 @@ class CartActions(QtWidgets.QWidget):
             0.001,
             float(available),
             decimals=3,
+            format_shortest=True,
         )
 
         if ok:
