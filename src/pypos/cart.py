@@ -380,10 +380,13 @@ class CartActions(QtWidgets.QWidget):
         available = Decimal(query.value(1)) / QUANTITY_FACTOR
         in_cart = Decimal(query.value(2)) / QUANTITY_FACTOR
 
+        locale = QtCore.QLocale()
+        available_str = locale.toString(float(available), "f", FP_SHORTEST)
+
         quantity, ok = DecimalInputDialog.getDecimal(
             self,
             "Cambiar unidades",
-            "Unidades de este producto:",
+            f"Unidades de este producto:\nDisponibles: {available_str}",
             float(in_cart),
             0.001,
             float(available),
