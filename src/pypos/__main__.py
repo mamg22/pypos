@@ -9,6 +9,7 @@ from pypos.common import checked_query
 
 from . import inventory, settings
 from .cart import CartWidget
+from .converter import ConverterDialog
 from .help import HelpDialog
 from .reports import ReportsWindow
 from . import resources as resources  # Only for the side effects
@@ -47,6 +48,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         reports_action = app_menu.addAction("&Reportes...")
         reports_action.triggered.connect(self.show_reports)
+        converter_action = app_menu.addAction("&Convertidor de moneda")
+        converter_action.triggered.connect(self.show_converter)
+        app_menu.addSeparator()
         exit_action = app_menu.addAction("&Salir")
         exit_action.triggered.connect(self.bye)
 
@@ -156,6 +160,11 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def show_general_help(self) -> None:
         HelpDialog.general_help()
+
+    @QtCore.Slot()
+    def show_converter(self) -> None:
+        dialog = ConverterDialog(self)
+        dialog.show()
 
 
 SCHEMA: list[str] = [

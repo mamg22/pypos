@@ -11,16 +11,6 @@ class HelpDialog(QtWidgets.QDialog):
         self.text_box = QtWidgets.QTextEdit(help_text)
         self.text_box.setReadOnly(True)
 
-        # cursor = self.text_box.textCursor()
-        # block_format = QtGui.QTextBlockFormat()
-        # block_format.setLineHeight(
-        #     150.0, QtGui.QTextBlockFormat.LineHeightTypes.ProportionalHeight.value
-        # )
-        #
-        # cursor.clearSelection()
-        # cursor.select(QtGui.QTextCursor.SelectionType.Document)
-        # cursor.setBlockFormat(block_format)
-
         SB = QtWidgets.QDialogButtonBox.StandardButton
         self.buttons = QtWidgets.QDialogButtonBox(SB.Close)
 
@@ -187,6 +177,9 @@ GENERAL_HELP = """\
     <li>
         Ganancia esperada: Suma del estimado de ganancia de todos los productos.
     </li>
+</p>
+<p>
+<kbd>Convertidor de moneda</kbd>: Utilidad para rápidamente convertir montos entre dólares y bolivares.
 </p>
 <p>
 <kbd>Opciones > Tasa de cambio...</kbd>: Permite cambiar la tasa del dólar utilizada para las
