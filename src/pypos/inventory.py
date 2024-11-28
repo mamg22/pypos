@@ -693,7 +693,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.absolute_quantity.setMaximum(MAX_SAFE_DOUBLE)
         self.absolute_quantity.setDecimals(3)
 
-        self.absolute_label = QtWidgets.QLabel("En inventario:")
+        self.absolute_label = QtWidgets.QLabel("&En inventario:")
         self.absolute_label.setBuddy(self.absolute_quantity)
 
         layout.addWidget(self.absolute_label, 1, 0)
@@ -705,7 +705,7 @@ class ProductQuantityDialog(QtWidgets.QDialog):
         self.relative_quantity.setMaximum(MAX_SAFE_DOUBLE)
         self.relative_quantity.setDecimals(3)
 
-        self.relative_label = QtWidgets.QLabel("Ingresar/Egresar:")
+        self.relative_label = QtWidgets.QLabel("&Ingresar/Egresar:")
         self.relative_label.setBuddy(self.relative_quantity)
 
         layout.addWidget(self.relative_label, 3, 0)
