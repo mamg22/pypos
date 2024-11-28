@@ -5,7 +5,7 @@ import logging
 from sys import float_info
 from typing import Any, cast
 
-from PySide6 import QtCore, QtWidgets, QtGui, QtSql
+from PySide6 import QtCore, QtWidgets, QtSql
 from PySide6.QtCore import Qt
 
 MAX_SAFE_DOUBLE = 10 ** (float_info.dig - 3)
@@ -25,17 +25,15 @@ class DecimalSpinBox(QtWidgets.QDoubleSpinBox):
     def __init__(self, *args, format_shortest: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.format_shortest = format_shortest
+        self.format_decimals = FP_SHORTEST if self.format_shortest else self.decimals()
 
     def decimal_value(self) -> Decimal:
         value_text = str(self.value())
         return Decimal(value_text)
 
     def textFromValue(self, val: float) -> str:
-        if self.format_shortest:
-            locale = QtCore.QLocale()
-            return locale.toString(val, "f", FP_SHORTEST)
-        else:
-            return super().textFromValue(val)
+        locale = QtCore.QLocale()
+        return locale.toString(val, "f", self.format_decimals)
 
 
 class DecimalInputDialog(QtWidgets.QDialog):
