@@ -5,10 +5,10 @@ from typing import cast
 
 from PySide6 import QtCore, QtWidgets, QtSql
 
-from pypos.common import checked_query
 
 from . import inventory, settings
 from .cart import CartWidget
+from .common import checked_query
 from .converter import ConverterDialog
 from .help import HelpDialog
 from .reports import ReportsWindow
