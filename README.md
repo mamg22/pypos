@@ -1,3 +1,5 @@
+[Leer en español/Read in spanish](README.es.md)
+
 # pypos
 
 Inventory and sale management program with support for two different currencies
